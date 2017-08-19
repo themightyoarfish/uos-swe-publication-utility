@@ -28,6 +28,9 @@ class PublicationDatabase(object):
         self.databases_file = databases_file
         self.populate(databases_file)
 
+    def __delitem__(self, key):
+        self.delete(key)
+
     def delete(self, key):
         for member, publications in self.publications.items():
             for k, entry in publications.entries.items():
@@ -35,7 +38,6 @@ class PublicationDatabase(object):
                     # dirty hack since CaseInsensitiveOrderedDict does not
                     # support deletion
                     del publications.entries.__dict__['_dict'][k]
-                    import ipdb; ipdb.set_trace()
 
 
     def save(self):
@@ -75,6 +77,51 @@ class PublicationDatabase(object):
                 if comparator(item1, item2):
                     suspects.append((item1, item2))
         return suspects
+
+    def render(publications, fmt='bib'):
+        known_fmts = ['bib', 'html', 'latex']
+        if fmt not in known_fmts:
+            raise ValueError("Unknown format given. Known formats are {}, {}, {}", *fmt)
+
+    def iter_entries(self, member=None):
+        if not member:
+            for member, pubs in self.publications.items():
+                for entry in pubs:
+                    yield entry
+        else:
+            if member not in self.publications:
+                raise ValueError("Unknown group member.")
+            for entry in self.publications[member]:
+                yield entry
+
+
+    def filter_entries(self, fn=lambda e: True):
+        return [entry for entry in self.iter_entries() if fn(entry)]
+
+    def publications_for_year(self, min_year, max_year):
+        if max_year <= min_year:
+            raise ValueError("min_year must be smaller than max_year")
+
+        def f(entry):
+            for field_name, value in entry.fields:
+                if field_name == 'year' and min_year <= int(value) <= max_year:
+                    return True
+            return False
+             
+        return self.filter_entries(fn=f)
+
+
+    def publications_for_type(self, type):
+        def f(entry):
+            return entry.type == type
+        return filter_entries(fn=f)
+
+
+    def publications_for_member(self, member, fmt='bib'):
+        if member not in self.publications:
+            raise ValueError("Unknown group member.")
+        return self.publications['member']
+
 
 
 def build(args):
