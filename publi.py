@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import sys
-import pybtex.database
 import json
-from os import path
+from itertools import combinations
+import pybtex.database
+from pickle import load, dump
 
 databases_file = "databases.json"
 
@@ -28,6 +28,23 @@ class PublicationDatabase(object):
         self.databases_file = databases_file
         self.populate(databases_file)
 
+    def delete(self, key):
+        for member, publications in self.publications.items():
+            for k, entry in publications.entries.items():
+                if k == key:
+                    # dirty hack since CaseInsensitiveOrderedDict does not
+                    # support deletion
+                    del publications.entries.__dict__['_dict'][k]
+                    import ipdb; ipdb.set_trace()
+
+
+    def save(self):
+        with open('db.pckl', mode='wb') as f:
+            dump(self.publications, f)
+
+    def load(self):
+        with open('db.pckl', mode='rb') as f:
+            self.publications = load(f)
 
     def populate(self, databases_file):
         """Collect all bibdata from all files into one big-ass database"""
@@ -44,11 +61,12 @@ class PublicationDatabase(object):
                         for (member, bibloc) in map(lambda d: (d['author'], d['path']), databases['files'])
             }
 
-    def find_duplicates(self, comparator):
+    def find_duplicates(self, comparator=None):
         """Find suspected duplicates"""
-        from itertools import combinations
-        for member, publications in self.publications.items():
-            suspects = []
+        if not comparator:
+            comparator = PublicationDatabase.default_comparator
+        suspects = []
+        for _, publications in self.publications.items():
             # it seems that OrderedCaseInsensitiveDict, which inherits from
             # MutableMapping, does not provide an items() iterator, so we need
             # to form tuples manually
@@ -56,11 +74,17 @@ class PublicationDatabase(object):
             for (item1, item2) in combos:
                 if comparator(item1, item2):
                     suspects.append((item1, item2))
+        return suspects
 
 
 def build(args):
     pubdata = PublicationDatabase(args.databases)
-    pubdata.deduplicate()
+    duplicates = pubdata.find_duplicates()
+    pubdata.delete('iyenghar.pulvermueller.ea:model-based*1')
+    pubdata.save()
+    print("Suspected duplicates: ")
+    for item1, item2 in duplicates:
+        print("\t{} == {}".format(item1[0], item2[0]))
 
 def add(args):
     pass
@@ -90,7 +114,7 @@ def main():
     #                             build subcommand                             #
     ############################################################################
     build_parser = subparsers.add_parser('build', help='Build a database')
-    build_parser.add_argument('-d', '--databases', required=False, type=str,
+    build_parser.add_argument('-d', '--databases', required=True, type=str,
             help='json file with absolute paths to all relevant bibtex files')
     build_parser.set_defaults(func=build)
 
