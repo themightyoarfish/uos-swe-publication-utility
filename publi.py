@@ -56,8 +56,8 @@ class PublicationDatabase(object):
             # them into tuples so we can do (a,b) = tup on them in the dict
             # comprehension below. Why not just use d.values() in lambda? Because
             # the order is non-deterministic
-            self.publications = { 
-                    member: read_bibfile(bibloc) 
+            self.publications = {
+                    member: read_bibfile(bibloc)
                         for (member, bibloc) in map(lambda d: (d['author'], d['path']), databases['files'])
             }
 
@@ -140,8 +140,12 @@ def main():
             help='Format to output', choices=['bib', 'html', 'pdf'])
 
     args = parser.parse_args()
-    # dispatch subparser handler
-    args.func(args)
+    # not sure how to handle no subcommand given
+    if args.subparser_name:
+        # dispatch subparser handler
+        args.func(args)
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
