@@ -1,17 +1,34 @@
 #!/usr/bin/env python3
+
+"""A program to build, update, export publications
+
+..moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
+"""
 import argparse
 import json
 from itertools import combinations
-import pybtex.database
-from pickle import load, dump
+from pickle import dump, load
 
-databases_file = "databases.json"
+import pybtex.database
+
+DATABASES_FILE = "databases.json"
 
 class PublicationDatabase(object):
     """Class to hold information about publiction lists"""
 
     @classmethod
     def default_comparator(cls, item1, item2):
+        """Default comparator for bibliograpyh items.This function will first compare the keys and then
+            check whether both entries have a title field and if so, check whether their values are equal.
+
+        :param cls: Class object
+        :type cls: class
+        :param item1: First bibliography item
+        :type item1: tuple
+        :param item2: Second bibliography item
+        :type item2: tuple
+        :returns: bool -- whether the two are duplicates or not
+        """
         key1, entry1 = item1
         key2, entry2 = item2
         if key1 == key2:
@@ -24,30 +41,45 @@ class PublicationDatabase(object):
                 return False
 
     def __init__(self, databases_file):
-        """Create a database by reading all the .bib files listed in a file"""
+        """Create a database by reading all the .bib files listed in a file.
+        
+        :param databases_file: Json file listing members and associated file locations of bibfiles
+        :type databses_file: str
+        """
         self.databases_file = databases_file
         self.populate(databases_file)
 
     def delete(self, key):
-        for member, publications in self.publications.items():
-            for k, entry in publications.entries.items():
+        """Remove item from bilbiography
+        
+        :param key: Bibliography key to delete
+        :type key: str
+        """
+        for publications in self.publications.values()
+            for k in publications.entries.keys():
                 if k == key:
                     # dirty hack since CaseInsensitiveOrderedDict does not
                     # support deletion
                     del publications.entries.__dict__['_dict'][k]
-                    import ipdb; ipdb.set_trace()
 
 
     def save(self):
+        """Serialize self to pickled file named 'db.pckl'"""
         with open('db.pckl', mode='wb') as f:
             dump(self.publications, f)
 
     def load(self):
+        """Deserialize self from pickled file named 'db.pckl'.
+        """
         with open('db.pckl', mode='rb') as f:
             self.publications = load(f)
 
     def populate(self, databases_file):
-        """Collect all bibdata from all files into one big-ass database"""
+        """Collect all bibdata from all files into one big-ass database.
+        
+        :param databases_file: File listing members and locations of bibfiles
+        :type databases_file: str
+        """
 
         with open(databases_file) as file:
             databases = json.load(file)
@@ -62,7 +94,9 @@ class PublicationDatabase(object):
             }
 
     def find_duplicates(self, comparator=None):
-        """Find suspected duplicates"""
+        """Find suspected duplicates.
+        :param comparator: binary function to determine whether two bib items (of type (:class: `str`, :class: `pybtex.Entry`))
+        """
         if not comparator:
             comparator = PublicationDatabase.default_comparator
         suspects = []
@@ -78,6 +112,14 @@ class PublicationDatabase(object):
 
 
 def build(args):
+    """Build a :class: `PublicationDatabase` from the arguments passed.
+    
+    :param args: :class: `Namespace` object obtained via :class: argparse.ArgumentParser's :link: `argparse.ArgumentParser.parse_args` method.
+    :type args: argparse.Namespace
+    :returns: database with all publications
+    :rtype: PublicationDatabase
+
+    """
     pubdata = PublicationDatabase(args.databases)
     duplicates = pubdata.find_duplicates()
     pubdata.delete('iyenghar.pulvermueller.ea:model-based*1')
@@ -85,6 +127,7 @@ def build(args):
     print("Suspected duplicates: ")
     for item1, item2 in duplicates:
         print("\t{} == {}".format(item1[0], item2[0]))
+    return pubdata
 
 def add(args):
     pass
