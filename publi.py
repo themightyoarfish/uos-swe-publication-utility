@@ -13,13 +13,15 @@ import pybtex.database
 
 DATABASES_FILE = "databases.json"
 
+
 class PublicationDatabase(object):
     """Class to hold information about publiction lists"""
 
     @classmethod
     def default_comparator(cls, item1, item2):
-        """Default comparator for bibliograpyh items.This function will first compare the keys and then
-            check whether both entries have a title field and if so, check whether their values are equal.
+        """Default comparator for bibliograpyh items.This function will first compare the keys and
+        then check whether both entries have a title field and if so, check whether their values are
+        equal.
 
         :param cls: Class object
         :type cls: class
@@ -42,7 +44,7 @@ class PublicationDatabase(object):
 
     def __init__(self, databases_file):
         """Create a database by reading all the .bib files listed in a file.
-        
+
         :param databases_file: Json file listing members and associated file locations of bibfiles
         :type databses_file: str
         """
@@ -51,17 +53,16 @@ class PublicationDatabase(object):
 
     def delete(self, key):
         """Remove item from bilbiography
-        
+
         :param key: Bibliography key to delete
         :type key: str
         """
-        for publications in self.publications.values()
+        for publications in self.publications.values():
             for k in publications.entries.keys():
                 if k == key:
                     # dirty hack since CaseInsensitiveOrderedDict does not
                     # support deletion
                     del publications.entries.__dict__['_dict'][k]
-
 
     def save(self):
         """Serialize self to pickled file named 'db.pckl'"""
@@ -76,7 +77,7 @@ class PublicationDatabase(object):
 
     def populate(self, databases_file):
         """Collect all bibdata from all files into one big-ass database.
-        
+
         :param databases_file: File listing members and locations of bibfiles
         :type databases_file: str
         """
@@ -90,12 +91,14 @@ class PublicationDatabase(object):
             # the order is non-deterministic
             self.publications = {
                     member: read_bibfile(bibloc)
-                        for (member, bibloc) in map(lambda d: (d['author'], d['path']), databases['files'])
+                    for (member, bibloc) in
+                    map(lambda d: (d['author'], d['path']), databases['bibfiles'])
             }
 
     def find_duplicates(self, comparator=None):
         """Find suspected duplicates.
-        :param comparator: binary function to determine whether two bib items (of type (:class: `str`, :class: `pybtex.Entry`))
+        :param comparator: binary function to determine whether two bib items (of type (:class:
+            `str`, :class: `pybtex.Entry`))
         """
         if not comparator:
             comparator = PublicationDatabase.default_comparator
@@ -104,7 +107,8 @@ class PublicationDatabase(object):
             # it seems that OrderedCaseInsensitiveDict, which inherits from
             # MutableMapping, does not provide an items() iterator, so we need
             # to form tuples manually
-            combos = combinations([(key, publications.entries[key]) for key in publications.entries], 2)
+            combos = combinations([(key, publications.entries[key])
+                                   for key in publications.entries], 2)
             for (item1, item2) in combos:
                 if comparator(item1, item2):
                     suspects.append((item1, item2))
@@ -113,8 +117,9 @@ class PublicationDatabase(object):
 
 def build(args):
     """Build a :class: `PublicationDatabase` from the arguments passed.
-    
-    :param args: :class: `Namespace` object obtained via :class: argparse.ArgumentParser's :link: `argparse.ArgumentParser.parse_args` method.
+
+    :param args: :class: `Namespace` object obtained via :class: argparse.ArgumentParser's :link:
+        `argparse.ArgumentParser.parse_args` method.
     :type args: argparse.Namespace
     :returns: database with all publications
     :rtype: PublicationDatabase
@@ -129,24 +134,42 @@ def build(args):
         print("\t{} == {}".format(item1[0], item2[0]))
     return pubdata
 
+
 def add(args):
     pass
+
 
 def read_bibfile(filename):
     with open(filename) as f:
         return pybtex.database.parse_file(f, 'bibtex')
 
+
 def deduplicate(database):
     pass
+
 
 def render_to_latex(bibdata, template):
     pass
 
+
 def render_to_html(bibdata):
     pass
 
+
+def pdf_for_pub(bibdata, pdf_folder):
+    """Attempt to guess which pdf file might belong to a given bibliography entry.
+
+    :bibdata: BibliographyData object
+    :pdf_folder: str denoting folder location
+    :returns: str
+
+    """
+    pass
+
+
 def build_publication_map(bibdata, pdf_paths=[]):
     pass
+
 
 def main():
     """Process user commands."""
@@ -158,7 +181,7 @@ def main():
     ############################################################################
     build_parser = subparsers.add_parser('build', help='Build a database')
     build_parser.add_argument('-d', '--databases', required=True, type=str,
-            help='json file with absolute paths to all relevant bibtex files')
+                              help='json file with absolute paths to all relevant bibtex files')
     build_parser.set_defaults(func=build)
 
     ############################################################################
@@ -166,11 +189,11 @@ def main():
     ############################################################################
     add_parser = subparsers.add_parser('add', help='Add something to the database')
     add_parser.add_argument('-e', '--entry', required=False, type=str,
-            help='bibtex entry to add')
+                            help='bibtex entry to add')
     add_parser.add_argument('-m', '--member', required=True, type=str,
-            help='name of the group member to add the publication to')
+                            help='name of the group member to add the publication to')
     add_parser.add_argument('-f', '--file', required=False, type=str,
-            help='Bibfile to add to the database')
+                            help='Bibfile to add to the database')
     add_parser.set_defaults(func=add)
     # TODO: Fuzzy author guessing
 
@@ -179,8 +202,8 @@ def main():
     ############################################################################
     list_parser = subparsers.add_parser('list', help='Build a database')
     list_parser.add_argument('-f', '--format', required=False, type=str,
-            default='bib',
-            help='Format to output', choices=['bib', 'html', 'pdf'])
+                             default='bib',
+                             help='Format to output', choices=['bib', 'html', 'pdf'])
 
     args = parser.parse_args()
     # not sure how to handle no subcommand given
@@ -189,6 +212,7 @@ def main():
         args.func(args)
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()
