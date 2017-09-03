@@ -6,7 +6,11 @@
 """
 import argparse
 import json
+import PyPDF2
+from difflib import SequenceMatcher
+from pathlib import Path
 from itertools import combinations
+from pylatexenc.latex2text import LatexNodes2Text  # to unescape latex
 from pickle import dump, load
 
 import pybtex.database
@@ -114,6 +118,17 @@ class PublicationDatabase(object):
                     suspects.append((item1, item2))
         return suspects
 
+    def iter_all(self):
+        for member in self.publications.keys():
+            for key, publication in self.publications[member].entries.items():
+                yield (key, publication)
+
+    def build_publication_map(self, pdf_folder):
+        return {
+            key: pdf_for_pub(entry, pdf_folder)
+            for key, entry in self.iter_all()
+        }
+
 
 def build(args):
     """Build a :class: `PublicationDatabase` from the arguments passed.
@@ -127,11 +142,12 @@ def build(args):
     """
     pubdata = PublicationDatabase(args.databases)
     duplicates = pubdata.find_duplicates()
-    pubdata.delete('iyenghar.pulvermueller.ea:model-based*1')
     pubdata.save()
     print("Suspected duplicates: ")
     for item1, item2 in duplicates:
         print("\t{} == {}".format(item1[0], item2[0]))
+    for key, entry in pubdata.iter_all():
+        print(get_title_info(entry))
     return pubdata
 
 
@@ -156,6 +172,70 @@ def render_to_html(bibdata):
     pass
 
 
+def get_title_info(entry):
+    """Try to guess title information from a publication."""
+    import ipdb
+    if type(entry) is PyPDF2.PdfFileReader:
+        if '/Title' in entry.documentInfo:
+            return entry.documentInfo['/Title']
+        else:
+            ipdb.set_trace()
+            return None
+    elif type(entry) is pybtex.database.Entry:
+        if 'title' in entry.fields:
+            return LatexNodes2Text().latex_to_text(entry.fields['title'])
+        elif 'booktitle' in entry.fields:
+            return LatexNodes2Text().latex_to_text(entry.fields['booktitle'])
+        else:
+            ipdb.set_trace()
+            return None
+    else:
+        ipdb.set_trace()
+        raise NotImplementedError("Can only handle pdf or bib objects.")
+
+
+def get_author_info(entry):
+    """Try to extract some form of author string from a bibitem
+
+    :entry: BibliographyData
+    :returns: str -- String with author info or None, if nothing found
+
+    """
+    import ipdb
+    if type(entry) is PyPDF2.PdfFileReader:
+        if '/Author' in entry.documentInfo:
+            return entry.documentInfo['/Author']
+        else:
+            ipdb.set_trace()
+            return None
+    elif type(entry) is pybtex.database.Entry:
+        author1 = ''
+        author2 = ''
+        author3 = ''
+        if 'author' in entry.fields:
+            author1 = str(entry.fields['author'])
+        if 'authors' in entry.fields:
+            author2 = entry.fields['authors']
+        if 'author' in str(entry.persons):
+            persons = [' '.join(p.first_names + p.middle_names + p.last_names) for p in
+                       entry.persons['author']]
+            author3 = ' '.join(persons)
+        if 'editor' in str(entry.persons):
+            persons = [' '.join(p.first_names + p.middle_names + p.last_names) for p in
+                       entry.persons['editor']]
+            author3 = ' '.join(persons)
+
+        author_info = LatexNodes2Text().latex_to_text(' '.join((author1, author2, author3)))
+        if author_info:
+            return author_info.strip()
+        else:
+            ipdb.set_trace()
+            return None
+    else:
+        ipdb.set_trace()
+        raise NotImplementedError("Can only handle pdf or bib objects.")
+
+
 def pdf_for_pub(bibdata, pdf_folder):
     """Attempt to guess which pdf file might belong to a given bibliography entry.
 
@@ -164,11 +244,33 @@ def pdf_for_pub(bibdata, pdf_folder):
     :returns: str
 
     """
-    pass
-
-
-def build_publication_map(bibdata, pdf_paths=[]):
-    pass
+    pdf_path = Path(pdf_folder)
+    if not pdf_path.exists():
+        raise OSError('Folder %s does not exist.' % pdf_folder)
+    if not pdf_path.is_dir():
+        raise OSError('%s is not a folder.' % pdf_folder)
+    else:
+        match = None
+        confidence = 0
+        for file in pdf_path.iterdir():
+            pdf = PyPDF2.PdfFileReader(str(file))
+            author_info     = get_author_info(bibdata)
+            title_info      = get_title_info(bibdata)
+            author_info_pdf = get_author_info(pdf)
+            title_info_pdf  = get_title_info(pdf)
+            confidence_title = SequenceMatcher(None, title_info_pdf,
+                                               title_info,
+                                               autojunk=False).ratio()
+            confidence_author = SequenceMatcher(None, author_info_pdf,
+                                                author_info,
+                                                autojunk=False).ratio()
+            new_confidence = (confidence_title + confidence_author) / 2
+            if confidence < new_confidence:
+                confidence = new_confidence
+                match = file
+        if match:
+            print('Match for %s: %s' % (bibdata, match))
+        return match
 
 
 def main():
@@ -182,6 +284,8 @@ def main():
     build_parser = subparsers.add_parser('build', help='Build a database')
     build_parser.add_argument('-d', '--databases', required=True, type=str,
                               help='json file with absolute paths to all relevant bibtex files')
+    build_parser.add_argument('-p', '--pdfs', required=True, type=str,
+                              help='Path to pdf folder.', dest='pdf_loc')
     build_parser.set_defaults(func=build)
 
     ############################################################################
