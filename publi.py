@@ -147,7 +147,7 @@ def build(args):
     for item1, item2 in duplicates:
         print("\t{} == {}".format(item1[0], item2[0]))
     for key, entry in pubdata.iter_all():
-        print(get_title_info(entry))
+        print(pdf_for_pub(entry, args.pdf_loc))
     return pubdata
 
 
@@ -175,12 +175,13 @@ def render_to_html(bibdata):
 def get_title_info(entry):
     """Try to guess title information from a publication."""
     import ipdb
-    if type(entry) is PyPDF2.PdfFileReader:
-        if '/Title' in entry.documentInfo:
-            return entry.documentInfo['/Title']
+    if isinstance(entry, Path):
+        pdf = PyPDF2.PdfFileReader(str(entry))
+        if '/Title' in pdf.documentInfo:
+            return pdf.documentInfo['/Title']
         else:
-            ipdb.set_trace()
-            return None
+            # last straw: filename
+            return entry.stem
     elif type(entry) is pybtex.database.Entry:
         if 'title' in entry.fields:
             return LatexNodes2Text().latex_to_text(entry.fields['title'])
@@ -202,12 +203,13 @@ def get_author_info(entry):
 
     """
     import ipdb
-    if type(entry) is PyPDF2.PdfFileReader:
-        if '/Author' in entry.documentInfo:
-            return entry.documentInfo['/Author']
+    if isinstance(entry, Path):
+        pdf = PyPDF2.PdfFileReader(str(entry))
+        if '/Author' in pdf.documentInfo:
+            return pdf.documentInfo['/Author']
         else:
-            ipdb.set_trace()
-            return None
+            # last straw: filename
+            return entry.stem
     elif type(entry) is pybtex.database.Entry:
         author1 = ''
         author2 = ''
@@ -253,16 +255,15 @@ def pdf_for_pub(bibdata, pdf_folder):
         match = None
         confidence = 0
         for file in pdf_path.iterdir():
-            pdf = PyPDF2.PdfFileReader(str(file))
             author_info     = get_author_info(bibdata)
             title_info      = get_title_info(bibdata)
-            author_info_pdf = get_author_info(pdf)
-            title_info_pdf  = get_title_info(pdf)
-            confidence_title = SequenceMatcher(None, title_info_pdf,
-                                               title_info,
+            author_info_pdf = get_author_info(file)
+            title_info_pdf  = get_title_info(file)
+            confidence_title = SequenceMatcher(None, title_info_pdf.split(),
+                                               title_info.split(),
                                                autojunk=False).ratio()
-            confidence_author = SequenceMatcher(None, author_info_pdf,
-                                                author_info,
+            confidence_author = SequenceMatcher(None, author_info_pdf.split(),
+                                                author_info.split(),
                                                 autojunk=False).ratio()
             new_confidence = (confidence_title + confidence_author) / 2
             if confidence < new_confidence:
