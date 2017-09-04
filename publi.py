@@ -129,14 +129,13 @@ class PublicationDatabase(object):
     def iter_entries(self, member=None):
         if not member:
             for member, pubs in self.publications.items():
-                for entry in pubs:
-                    yield entry
+                for k, entry in pubs.entries.items():
+                    yield (k, entry)
         else:
             if member not in self.publications:
                 raise ValueError("Unknown group member.")
-            for entry in self.publications[member]:
-                yield entry
-
+                for k, entry in pubs.entries.items():
+                    yield (k, entry)
 
     def filter_entries(self, fn=lambda e: True):
         return [entry for entry in self.iter_entries() if fn(entry)]
@@ -150,7 +149,7 @@ class PublicationDatabase(object):
                 if field_name == 'year' and min_year <= int(value) <= max_year:
                     return True
             return False
-             
+
         return self.filter_entries(fn=f)
 
 
@@ -217,25 +216,25 @@ def render_to_html(bibdata):
 
 def get_title_info(entry):
     """Try to guess title information from a publication."""
-    import ipdb
     if isinstance(entry, Path):
         pdf = PyPDF2.PdfFileReader(str(entry))
         if '/Title' in pdf.documentInfo:
             return pdf.documentInfo['/Title']
         else:
-            # last straw: filename
-            return entry.stem
+            text = ''
+            for page in pdf.pages:
+                text += page.extractText()
+            import ipdb
+            ipdb.set_trace()
     elif type(entry) is pybtex.database.Entry:
         if 'title' in entry.fields:
             return LatexNodes2Text().latex_to_text(entry.fields['title'])
         elif 'booktitle' in entry.fields:
             return LatexNodes2Text().latex_to_text(entry.fields['booktitle'])
         else:
-            ipdb.set_trace()
             return None
     else:
-        ipdb.set_trace()
-        raise NotImplementedError("Can only handle pdf or bib objects.")
+        raise NotImplementedError("Can only handle pdf or bib objects (was %s)" % type(entry))
 
 
 def get_author_info(entry):
@@ -245,7 +244,6 @@ def get_author_info(entry):
     :returns: str -- String with author info or None, if nothing found
 
     """
-    import ipdb
     if isinstance(entry, Path):
         pdf = PyPDF2.PdfFileReader(str(entry))
         if '/Author' in pdf.documentInfo:
@@ -274,11 +272,9 @@ def get_author_info(entry):
         if author_info:
             return author_info.strip()
         else:
-            ipdb.set_trace()
             return None
     else:
-        ipdb.set_trace()
-        raise NotImplementedError("Can only handle pdf or bib objects.")
+        raise NotImplementedError("Can only handle pdf or bib objects (was %s)" % type(entry))
 
 
 def pdf_for_pub(bibdata, pdf_folder):
