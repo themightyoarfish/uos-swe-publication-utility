@@ -1,3 +1,2 @@
 pybtex==0.21
 PyPDF2==1.26
-pylatexenc==0.9
