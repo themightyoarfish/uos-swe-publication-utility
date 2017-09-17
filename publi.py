@@ -44,16 +44,16 @@ class PublicationDatabase(object):
             else:
                 return False
 
-    def __init__(self, databases_file=None):
+    def __init__(self, database_file=None):
         """Create a database by reading all the .bib files listed in a file.
 
-        :param databases_file: Json file listing members and associated file
+        :param database_file: Json file listing members and associated file
         locations of bibfiles
         :type databses_file: str
         """
-        if databases_file:
-            self.databases_file = databases_file
-            self.populate(databases_file)
+        if database_file:
+            self.database_file = database_file
+            self.populate(database_file)
 
     def __delitem__(self, key):
         self.delete(key)
@@ -77,47 +77,22 @@ class PublicationDatabase(object):
             with open('db.pckl', mode='wb') as f:
                 dump(self.publications, f)
         else:
-            with open(self.databases_file) as f:
-                databases = json.load(f)
-                authors = databases['bibfiles']
-                for entry in authors:
-                    author = entry['author']
-                    path = entry['path']
-                    if author in self.publications:
-                        self.publications[author].to_file(path,
-                                                          bib_format='bibtex')
-                    else:
-                        print(('Warning: "%s" not found in publications but'
-                               'in databases' % author), file=sys.stderr)
+            self.publications.to_file(self.database_file, bib_format='bibtex')
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
         with open('db.pckl', mode='rb') as f:
             self.publications = load(f)
 
-    def populate(self, databases_file):
+    def populate(self, database_file):
         """Collect all bibdata from all files into one big-ass database.
 
-        :param databases_file: File listing members and locations of bibfiles
-        :type databases_file: str
+        :param database_file: File listing members and locations of bibfiles
+        :type database_file: str
         """
 
-        with open(databases_file) as file:
-            databases = json.load(file)
-            # db has entries of (author: foo, path: bar), which we obtain by
-            # asking the dict for its values (removing the keys) and turning
-            # them into tuples so we can do (a,b) = tup on them in the dict
-            # comprehension below. Why not just use d.values() in lambda?
-            # Because the order is non-deterministic
-            self.publications = {
-                    member: read_bibfile(bibloc)
-                    for (member, bibloc) in
-                    map(lambda d: (d['author'], d['path']),
-                        databases['bibfiles'])
-            }
-        keys = [key for bibdata in self.publications.values() for key in
-                        bibdata.entries.keys()]
-        self.keys = set(keys)
+        with open(database_file) as file:
+            self.publications = read_bibfile(database_file)
 
     def find_duplicates(self, comparator=None):
         """Find suspected duplicates.
@@ -127,7 +102,7 @@ class PublicationDatabase(object):
         if not comparator:
             comparator = PublicationDatabase.default_comparator
         suspects = []
-        for publications in self.publications.values():
+        for publications in self.publications:
             # it seems that OrderedCaseInsensitiveDict, which inherits from
             # MutableMapping, does not provide an items() iterator, so we need
             # to form tuples manually
@@ -138,23 +113,20 @@ class PublicationDatabase(object):
                     suspects.append((item1, item2))
         return suspects
 
-    def add_entry(self, member, key, entry):
+    def add_entry(self, key, entry):
         if not isinstance(entry, pybtex.database.Entry):
             raise ValueError('Expected type pybtex.database.Entry, got %' %
                              type(entry))
-        if member not in self.publications:
-            self.publications[member] = pybtex.database.BibliographyData(
-                {key: entry})
         else:
-            if key in self.publications[member].entries:
+            if key in self.publications.entries:
                 raise ValueError('Key already taken.')
-            self.publications[member].entries[key] = entry
+            self.publications.entries[key] = entry
 
-    def add_bibdata(self, member, entries):
+    def add_bibdata(self, entries):
         if isinstance(entries, str):
             bibdata = pybtex.database.parse_string(entries, bib_format='bibtex')
         for k, v in bibdata.entries.items():
-            self.add_entry(member, k, v)
+            self.add_entry(k, v)
 
     def render(publications, fmt='bib'):
         known_fmts = ['bib', 'html', 'latex']
@@ -164,14 +136,11 @@ class PublicationDatabase(object):
 
     def iter_entries(self, member=None):
         if not member:
-            for member, pubs in self.publications.items():
+            for pubs in self.publications:
                 for k, entry in pubs.entries.items():
                     yield (k, entry)
         else:
-            if member not in self.publications:
-                raise ValueError("Unknown group member.")
-                for k, entry in pubs.entries.items():
-                    yield (k, entry)
+            raise RuntimeError('Not implemented')
 
     def filter_entries(self, fn=lambda e: True):
         return [entry for entry in self.iter_entries() if fn(entry)]
@@ -194,9 +163,10 @@ class PublicationDatabase(object):
         return self.filter_entries(fn=f)
 
     def publications_for_member(self, member, fmt='bib'):
-        if member not in self.publications:
-            raise ValueError("Unknown group member.")
-        return self.publications['member']
+        raise ValueError('Not implemented')
+        # if member not in self.publications:
+        #     raise ValueError("Unknown group member.")
+        # return self.publications['member']
 
     def build_publication_map(self, pdf_folder):
         from pdf_util import pdf_for_pub
@@ -217,7 +187,7 @@ def build(args):
     :rtype: PublicationDatabase
 
     """
-    pubdata = PublicationDatabase(args.databases)
+    pubdata = PublicationDatabase(args.database)
     # duplicates = pubdata.find_duplicates()
     pubdata.save(to_file=True)
     # print("Suspected duplicates: ")
@@ -231,7 +201,7 @@ def build(args):
 def add(args):
     pubdata = PublicationDatabase()
     pubdata.load()
-    pubdata.add_bibdata(args.member, args.entries)
+    pubdata.add_bibdata(args.entries)
     pubdata.save()
 
 
@@ -257,9 +227,8 @@ def main():
     #                             build subcommand                             #
     ############################################################################
     build_parser = subparsers.add_parser('build', help='Build a database')
-    build_parser.add_argument('-d', '--databases', required=True, type=str,
-                              help=('json file with absolute paths'
-                                    'to all relevant bibtex files'))
+    build_parser.add_argument('-d', '--database', required=True, type=str,
+                              help=('Path to .bib file with all entries'))
     # build_parser.add_argument('-p', '--pdfs', required=True, type=str,
     #                           help='Path to pdf folder.', dest='pdf_loc')
     build_parser.set_defaults(func=build)
@@ -271,9 +240,6 @@ def main():
                                        help='Add something to the database')
     add_parser.add_argument('-e', '--entries', required=False, type=str,
                             help='bibtex entry to add')
-    add_parser.add_argument('-m', '--member', required=True, type=str,
-                            help=('name of the group member to'
-                                  'add the publication to'))
     add_parser.add_argument('-f', '--file', required=False, type=str,
                             help='Bibfile to add to the database')
     add_parser.set_defaults(func=add)
@@ -284,11 +250,10 @@ def main():
     ############################################################################
     list_parser = subparsers.add_parser('list', help='Build a database')
     list_parser.add_argument('-f', '--format', required=False, type=str,
-                             default='bib',
-                             help='Format to output', choices=['bib', 'html', 'pdf'])
+                             default='bib', help='Format to output',
+                             choices=['bib', 'html', 'pdf'])
 
     args = parser.parse_args()
-    # not sure how to handle no subcommand given
     if args.subparser_name:
         # dispatch subparser handler
         args.func(args)
