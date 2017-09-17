@@ -5,14 +5,41 @@
 ..moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
 """
 import argparse
-import json
-import sys
 from itertools import combinations
 from pickle import dump, load
 
 import pybtex.database
 
-DATABASES_FILE = "databases.json"
+def generate_key(entry):
+    """ Generate a key like bibtool would create with the following options
+            key.base=lower
+            key.format=short
+    """
+    if 'author' in entry.persons:
+        authors = entry.persons['author']
+    elif 'editor' in entry.persons:
+        authors = entry.persons['editor']
+    else:
+        raise ValueError('No author or editor present')
+    persons = '.'.join(map(lambda p: '-'.join(p.last_names), authors))
+    if 'title' in entry.fields:
+        title = entry.fields['title']
+    elif 'booktitle' in entry.fields:
+        title = entry.fields['booktitle']
+    else:
+        raise ValueError('No title or booktitle present')
+    return (persons + ':' + title.split()[0]).lower()
+
+def generate_suffix(key, keyset, current_suffix=''):
+    for suffix in range(97, 123):
+        if key + '.' + current_suffix + chr(suffix) not in keyset:
+            return current_suffix + chr(suffix)
+    return generate_suffix(key, keyset, current_suffix + 'a')
+
+def disambiguate(key, keyset):
+    """Disambiguate key over set of keys by successively appending more
+    alphanumeric numbers."""
+    return key + '.' + generate_suffix(key, keyset)
 
 
 class PublicationDatabase(object):
@@ -125,8 +152,10 @@ class PublicationDatabase(object):
     def add_bibdata(self, entries):
         if isinstance(entries, str):
             bibdata = pybtex.database.parse_string(entries, bib_format='bibtex')
-        for k, v in bibdata.entries.items():
-            self.add_entry(k, v)
+        for v in bibdata.entries.values():
+            key = disambiguate(generate_key(v), self.publications.entries.keys())
+            print('Generated key: %s' % key)
+            self.add_entry(key, v)
 
     def render(publications, fmt='bib'):
         known_fmts = ['bib', 'html', 'latex']
@@ -189,7 +218,7 @@ def build(args):
     """
     pubdata = PublicationDatabase(args.database)
     # duplicates = pubdata.find_duplicates()
-    pubdata.save(to_file=True)
+    pubdata.save(to_file=False)
     # print("Suspected duplicates: ")
     # for item1, item2 in duplicates:
     #     print("\t{} == {}".format(item1[0], item2[0]))
