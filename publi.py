@@ -10,6 +10,7 @@ from pickle import dump, load
 
 import pybtex.database
 
+
 def generate_key(entry):
     """ Generate a key like bibtool would create with the following options
             key.base=lower
@@ -30,11 +31,13 @@ def generate_key(entry):
         raise ValueError('No title or booktitle present')
     return (persons + ':' + title.split()[0]).lower()
 
+
 def generate_suffix(key, keyset, current_suffix=''):
     for suffix in range(97, 123):
         if key + '.' + current_suffix + chr(suffix) not in keyset:
             return current_suffix + chr(suffix)
     return generate_suffix(key, keyset, current_suffix + 'a')
+
 
 def disambiguate(key, keyset):
     """Disambiguate key over set of keys by successively appending more
@@ -118,8 +121,7 @@ class PublicationDatabase(object):
         :type database_file: str
         """
 
-        with open(database_file) as file:
-            self.publications = read_bibfile(database_file)
+        self.publications = read_bibfile(database_file)
 
     def find_duplicates(self, comparator=None):
         """Find suspected duplicates.
@@ -152,16 +154,13 @@ class PublicationDatabase(object):
     def add_bibdata(self, entries):
         if isinstance(entries, str):
             bibdata = pybtex.database.parse_string(entries, bib_format='bibtex')
+        else:
+            bibdata = entries  # Assume it's BibliographyData
         for v in bibdata.entries.values():
-            key = disambiguate(generate_key(v), self.publications.entries.keys())
-            print('Generated key: %s' % key)
+            key = disambiguate(generate_key(v),
+                               self.publications.entries.keys())
+            print('Entry added with key key: %s' % key)
             self.add_entry(key, v)
-
-    def render(publications, fmt='bib'):
-        known_fmts = ['bib', 'html', 'latex']
-        if fmt not in known_fmts:
-            raise ValueError(
-                "Unknown format given. Known formats are {}, {}, {}", *fmt)
 
     def iter_entries(self, member=None):
         if not member:
@@ -238,6 +237,36 @@ def read_bibfile(filename):
     with open(filename) as f:
         return pybtex.database.parse_file(f, 'bibtex')
 
+def check_validity(entry):
+    # TODO: Check if entry is valid by trying to render it
+    pass
+
+def render(args):
+    db = PublicationDatabase()
+    db.load()
+    publications = db.publications
+    fmt = args.fmt
+    known_fmts = ['bib', 'html', 'latex']
+    if fmt == 'bib':
+        result = publications.to_string(bib_format='bibtex')
+    elif fmt == 'html':
+        result = pybtex.format_from_string(
+            publications.to_string(bib_format='bibtex'),
+            'unsrt',
+            citations=publications.entries.keys(),
+            bib_format='bibtex',
+            bib_encoding=None,
+            output_backend='html',
+            output_encoding='utf8',
+            moin_crossrefs=9999
+        )
+    elif fmt == 'latex':
+        pass
+    else:
+        raise ValueError('Unknown format \'%s\' given. Known formats are ' +
+                         ','.join(["{}"] * len(known_fmts)), fmt, *known_fmts)
+    print(result)
+
 
 def render_to_latex(bibdata, template):
     pass
@@ -277,10 +306,11 @@ def main():
     ############################################################################
     #                             list subcommand                              #
     ############################################################################
-    list_parser = subparsers.add_parser('list', help='Build a database')
+    list_parser = subparsers.add_parser('list', help='List entries')
     list_parser.add_argument('-f', '--format', required=False, type=str,
-                             default='bib', help='Format to output',
+                             default='bib', help='Format to output', dest='fmt',
                              choices=['bib', 'html', 'pdf'])
+    list_parser.set_defaults(func=render)
 
     args = parser.parse_args()
     if args.subparser_name:
