@@ -10,7 +10,6 @@ from pickle import dump, load
 
 import pybtex.database
 
-
 def generate_key(entry):
     """ Generate a key like bibtool would create with the following options
             key.base=lower
@@ -252,7 +251,7 @@ def render(args):
     elif fmt == 'html':
         result = pybtex.format_from_string(
             publications.to_string(bib_format='bibtex'),
-            'unsrt',
+            'unsrtwithlinks',
             citations=publications.entries.keys(),
             bib_format='bibtex',
             bib_encoding=None,
