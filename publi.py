@@ -10,7 +10,7 @@ from itertools import combinations
 from pickle import dump, load
 from pathlib import Path
 import pybtex.database
-from pybtex.database import BibliographyData, Entry
+from pybtex.database import BibliographyData
 
 
 def generate_key(entry):
@@ -130,10 +130,11 @@ class PublicationDatabase(object):
                 bibdir.mkdir()
             for key, item in self.publications.entries.items():
                 # make copy without our secret fields
-                item = Entry(item.type, fields={k: v for k, v in
+                item = copy.copy(item)
+                item.fields = {k: v for k, v in
                                                 item.fields.items() if k not in
                                                 ['publipy_biburl',
-                                                 'publipy_pdfurl']})
+                                                 'publipy_pdfurl']}
                 bibfile = bibdir / Path(key + '.bib')
                 BibliographyData({key: item}).to_file(str(bibfile),
                                                         bib_format='bibtex')
