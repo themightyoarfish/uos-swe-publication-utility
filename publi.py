@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env ipython3 --
 
 """A program to build, update, export publications
 
@@ -7,8 +7,10 @@
 import argparse
 from itertools import combinations
 from pickle import dump, load
-
+from pathlib import Path
 import pybtex.database
+from pybtex.database import BibliographyData
+
 
 def generate_key(entry):
     """ Generate a key like bibtool would create with the following options
@@ -107,6 +109,13 @@ class PublicationDatabase(object):
                 dump(self.publications, f)
         else:
             self.publications.to_file(self.database_file, bib_format='bibtex')
+            bibdir = Path(self.database_file).parent / Path('bib')
+            if not bibdir.exists():
+                bibdir.mkdir()
+            for key, item in self.publications.entries.items():
+                bibfile = bibdir / Path(key + '.bib')
+                BibliographyData({key: item}).to_file(str(bibfile),
+                                                      bib_format='bibtex')
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
@@ -216,7 +225,7 @@ def build(args):
     """
     pubdata = PublicationDatabase(args.database)
     # duplicates = pubdata.find_duplicates()
-    pubdata.save(to_file=False)
+    pubdata.save(to_file=True)
     # print("Suspected duplicates: ")
     # for item1, item2 in duplicates:
     #     print("\t{} == {}".format(item1[0], item2[0]))
@@ -233,12 +242,18 @@ def add(args):
 
 
 def read_bibfile(filename):
+    """Read a bibliography file and add a key field"""
     with open(filename) as f:
-        return pybtex.database.parse_file(f, 'bibtex')
+        db = pybtex.database.parse_file(f, 'bibtex')
+        for key, item in db.entries.items():
+            item.fields['key'] = key
+        return db
+
 
 def check_validity(entry):
     # TODO: Check if entry is valid by trying to render it
     pass
+
 
 def render(args):
     db = PublicationDatabase()
