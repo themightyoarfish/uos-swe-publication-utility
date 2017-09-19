@@ -75,16 +75,21 @@ class PublicationDatabase(object):
             else:
                 return False
 
-    def __init__(self, database_file=None):
+    def __init__(self, database_file=None, prefix=None):
         """Create a database by reading all the .bib files listed in a file.
 
         :param database_file: Json file listing members and associated file
         locations of bibfiles
         :type databses_file: str
+        :param prefix: Folder prefix for saving/loading individual bib files and
+            pdfs
+        :type prefix: str
         """
         if database_file:
             self.database_file = database_file
             self.populate(database_file)
+
+        self.prefix = Path(prefix) if prefix else Path(self.database_file).parent
 
     def __delitem__(self, key):
         self.delete(key)
@@ -102,6 +107,16 @@ class PublicationDatabase(object):
                     # support deletion
                     del publications.entries.__dict__['_dict'][k]
 
+        # clean up bib file and pdf
+        bibfile = self.prefix / Path('bib') / Path('%s.bib' % key)
+        if bibfile.exists():
+            bibfile.unlink()
+
+        # pdffile = self.prefix / Path('pdf') / Path('%s.pdf'
+        #                                                                % key)
+        # if pdffile.exists():
+        #     pdffile.unlink()
+
     def save(self, to_file=False):
         """Serialize self to pickled file named 'db.pckl'"""
         if not to_file:
@@ -109,7 +124,7 @@ class PublicationDatabase(object):
                 dump(self.publications, f)
         else:
             self.publications.to_file(self.database_file, bib_format='bibtex')
-            bibdir = Path(self.database_file).parent / Path('bib')
+            bibdir = self.prefix / Path('bib')
             if not bibdir.exists():
                 bibdir.mkdir()
             for key, item in self.publications.entries.items():
