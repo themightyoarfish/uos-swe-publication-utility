@@ -5,11 +5,12 @@
 ..moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
 """
 import argparse
+import copy
 from itertools import combinations
 from pickle import dump, load
 from pathlib import Path
 import pybtex.database
-from pybtex.database import BibliographyData
+from pybtex.database import BibliographyData, Entry
 
 
 def generate_key(entry):
@@ -87,9 +88,8 @@ class PublicationDatabase(object):
         """
         if database_file:
             self.database_file = database_file
+            self.prefix = Path(prefix) if prefix else Path(self.database_file).parent
             self.populate(database_file)
-
-        self.prefix = Path(prefix) if prefix else Path(self.database_file).parent
 
     def __delitem__(self, key):
         self.delete(key)
@@ -117,20 +117,26 @@ class PublicationDatabase(object):
         # if pdffile.exists():
         #     pdffile.unlink()
 
-    def save(self, to_file=False):
+    def save(self):
         """Serialize self to pickled file named 'db.pckl'"""
-        if not to_file:
-            with open('db.pckl', mode='wb') as f:
-                dump(self.publications, f)
-        else:
+        with open('db.pckl', mode='wb') as f:
+            dump(self.publications, f)
+
+        # update the original database file
+        if self.database_file:
             self.publications.to_file(self.database_file, bib_format='bibtex')
             bibdir = self.prefix / Path('bib')
             if not bibdir.exists():
                 bibdir.mkdir()
             for key, item in self.publications.entries.items():
+                # make copy without our secret fields
+                item = Entry(item.type, fields={k: v for k, v in
+                                                item.fields.items() if k not in
+                                                ['publipy_biburl',
+                                                 'publipy_pdfurl']})
                 bibfile = bibdir / Path(key + '.bib')
                 BibliographyData({key: item}).to_file(str(bibfile),
-                                                      bib_format='bibtex')
+                                                        bib_format='bibtex')
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
@@ -145,6 +151,14 @@ class PublicationDatabase(object):
         """
 
         self.publications = read_bibfile(database_file)
+        for key, item in self.publications.entries.items():
+            item.fields['key'] = key
+            if 'publipy_biburl' not in item.fields:
+                item.fields['publipy_biburl'] = str(self.prefix / Path('bib') /
+                                                     Path(key + '.bib'))
+            if 'publipy_pdfurl' not in item.fields:
+                item.fields['publipy_pdfurl'] = str(self.prefix / Path('pdf') /
+                                                     Path(key + '.pdf'))
 
     def find_duplicates(self, comparator=None):
         """Find suspected duplicates.
@@ -240,7 +254,7 @@ def build(args):
     """
     pubdata = PublicationDatabase(args.database)
     # duplicates = pubdata.find_duplicates()
-    pubdata.save(to_file=True)
+    pubdata.save()
     # print("Suspected duplicates: ")
     # for item1, item2 in duplicates:
     #     print("\t{} == {}".format(item1[0], item2[0]))
@@ -260,8 +274,6 @@ def read_bibfile(filename):
     """Read a bibliography file and add a key field"""
     with open(filename) as f:
         db = pybtex.database.parse_file(f, 'bibtex')
-        for key, item in db.entries.items():
-            item.fields['key'] = key
         return db
 
 

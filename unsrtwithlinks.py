@@ -22,12 +22,11 @@ class Style(UnsrtStyle):
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
             text = text + Text(String(' ['),
-                               HRef(entry.fields['key'] + '.pdf',
-                                    Tag('tt', 'pdf')), String('] ')
+                               HRef(entry.fields['publipy_biburl'], Tag('tt', 'bib')),
+                               String('] ')
                                )
             text = text + Text(String(' ['),
-                               HRef(entry.fields['key'] + '.bib',
-                                    Tag('tt', 'bibtex')),
+                               HRef(entry.fields['publipy_pdfurl'], Tag('tt', 'pdf')),
                                String(']')
                                )
             yield FormattedEntry(entry.key, text, label)
