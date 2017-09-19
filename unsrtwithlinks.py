@@ -16,11 +16,18 @@ class Style(UnsrtStyle):
         for label, entry in zip(labels, sorted_entries):
             for persons in entry.persons.itervalues():
                 for person in persons:
-                    person.text = self.format_name(person, self.abbreviate_names)
+                    person.text = self.format_name(person,
+                                                   self.abbreviate_names)
 
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
-            # TODO: Add links to entries and query here
-            text = text + Text(String('['), HRef('foo://bar', Tag('tt', 'pdf')),
-                               String(']'))
+            text = text + Text(String(' ['),
+                               HRef(entry.fields['key'] + '.pdf',
+                                    Tag('tt', 'pdf')), String('] ')
+                               )
+            text = text + Text(String(' ['),
+                               HRef(entry.fields['key'] + '.bib',
+                                    Tag('tt', 'bibtex')),
+                               String(']')
+                               )
             yield FormattedEntry(entry.key, text, label)
