@@ -6,8 +6,11 @@ Install pybtex style plugin
 setup(name='Pybtex HTML rendering extensions',
       author='Rasmus Diederichsen',
       py_modules=['unsrtwithlinks'],
-      entry_points = {
-          'pybtex.style.formatting': 'unsrtwithlinks = unsrtwithlinks:Style',
-          'pybtex.style.formatting': 'gerunsrtwithlinks = gerunsrtwithlinks:Style',
+      entry_points={
+          'pybtex.style.formatting': ['unsrtwithlinks = unsrtwithlinks:Style',
+                                      'gerunsrtwithlinks =\
+                                      gerunsrtwithlinks:Style'
+                                      ],
+          'pybtex.backends': 'customhtml = customhtml:Backend',
       },
 )
