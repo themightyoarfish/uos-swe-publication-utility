@@ -8,5 +8,6 @@ setup(name='Pybtex HTML rendering extensions',
       py_modules=['unsrtwithlinks'],
       entry_points = {
           'pybtex.style.formatting': 'unsrtwithlinks = unsrtwithlinks:Style',
+          'pybtex.style.formatting': 'gerunsrtwithlinks = gerunsrtwithlinks:Style',
       },
 )

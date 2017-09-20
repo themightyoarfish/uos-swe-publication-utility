@@ -294,7 +294,7 @@ def render(args):
     elif fmt == 'html':
         result = pybtex.format_from_string(
             publications.to_string(bib_format='bibtex'),
-            'unsrtwithlinks',
+            'gerunsrtwithlinks',
             citations=publications.entries.keys(),
             bib_format='bibtex',
             bib_encoding=None,
