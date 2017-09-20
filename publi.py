@@ -26,7 +26,7 @@ def make_plain(text):
     return unidecode(LatexNodes2Text().latex_to_text(text))
 
 
-def generate_swe_key(entry):
+def generate_key_swe(entry):
     if 'author' in entry.persons:
         person = '-'.join(entry.persons['author'][0].last_names)
     elif 'editor' in entry.persons:
@@ -41,7 +41,8 @@ def generate_swe_key(entry):
                           and w not in string.punctuation)
     except StopIteration:
         title_word = ''
-    year = entry.fields['year'] if 'year' in entry.fields else ''
+
+    year = entry.fields['year'][-2:] if 'year' in entry.fields else ''
 
     person = make_plain(person).lower()
     title_word = title_word.lower()
@@ -201,7 +202,7 @@ class PublicationDatabase(object):
         self.publications = BibliographyData()
         publications = read_bibfile(database_file).entries
         for item in publications.values():
-            key = generate_swe_key(item)
+            key = generate_key_swe(item)
             item.fields['key'] = key
             if 'publipy_biburl' not in item.fields:
                 item.fields['publipy_biburl'] = str(self.prefix / Path('bib') /
@@ -337,11 +338,13 @@ def render(args):
     db = PublicationDatabase()
     db.load()
     known_fmts = ['bib', 'html', 'latex']
-    # eval won't be run until function is actually called
-    predicate = lambda entry: eval(args.expr)
+
+    def predicate(entry):
+        # eval won't be run until function is actually called
+        return eval(args.expr)
     try:
         publications = BibliographyData({k: v for k, v in
-                                            db.iter_entries(predicate=predicate)})
+                                         db.iter_entries(predicate=predicate)})
     except SyntaxError:
         raise ValueError('\'%s\' is invalid syntax.' % args.expr)
     fmt = args.fmt
@@ -357,12 +360,19 @@ def render(args):
             output_backend='customhtml',
             output_encoding='utf8'
         )
-    elif fmt == 'latex':
-        pass
+    elif fmt == 'tex':
+        raise NotImplementedError()
+    elif fmt == 'pdf':
+        raise NotImplementedError()
     else:
         raise ValueError('Unknown format \'%s\' given. Known formats are ' +
                          ','.join(["{}"] * len(known_fmts)), fmt, *known_fmts)
-    print(result)
+    outfile = args.out
+    if not outfile.endswith(fmt):
+        outfile += '.%s' % fmt
+
+    with open(outfile, mode='w', encoding='utf8') as f:
+        f.write(result)
 
 
 def render_to_latex(bibdata, template):
@@ -406,7 +416,10 @@ def main():
     list_parser = subparsers.add_parser('list', help='List entries')
     list_parser.add_argument('-f', '--format', required=False, type=str,
                              default='bib', help='Format to output', dest='fmt',
-                             choices=['bib', 'html', 'pdf'])
+                             choices=['bib', 'html', 'tex', 'pdf'])
+    list_parser.add_argument('-o', '--out', required=True, type=str,
+                             default='bibliography', help='File to output to',
+                             dest='out')
     list_parser.add_argument('-e', '--expr', required=False, type=str,
                              default='True',
                              help='Filter with python expression.'
