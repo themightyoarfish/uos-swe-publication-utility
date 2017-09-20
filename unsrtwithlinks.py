@@ -44,4 +44,10 @@ class Style(UnsrtStyle):
                                     Tag('tt', 'pdf')),
                                String(']')
                                )
+            if 'publipy_abstracturl' in entry.fields:
+                text = text + Text(String(' ['),
+                                   HRef(entry.fields['publipy_abstracturl'],
+                                        Tag('tt', 'abstract')),
+                                   String(']')
+                                   )
             yield FormattedEntry(entry.key, text, label)

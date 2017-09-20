@@ -18,7 +18,7 @@ from re import split
 import textwrap
 
 private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
-                      'url_home'])
+                      'url_home', 'publipy_abstracturl'])
 stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
@@ -208,6 +208,11 @@ class PublicationDatabase(object):
             if 'publipy_pdfurl' not in item.fields:
                 item.fields['publipy_pdfurl'] = str(self.prefix / Path('pdf') /
                                                     Path(key + '.pdf'))
+            if 'abstract' in item.fields:
+                item.fields['publipy_abstracturl'] = str(self.prefix /
+                                                          Path('abstracts') /
+                                                          Path(key + '.txt'))
+
             self.add_entry(key, item)
 
     def find_duplicates(self, comparator=None):
