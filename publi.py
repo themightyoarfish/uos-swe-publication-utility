@@ -354,9 +354,8 @@ def render(args):
             citations=publications.entries.keys(),
             bib_format='bibtex',
             bib_encoding=None,
-            output_backend='html',
-            output_encoding='utf8',
-            moin_crossrefs=9999
+            output_backend='customhtml',
+            output_encoding='utf8'
         )
     elif fmt == 'latex':
         pass
