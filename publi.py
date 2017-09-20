@@ -180,10 +180,11 @@ class PublicationDatabase(object):
                 # write abstract separately, if present. Format to 80 characters
                 if 'abstract' in item.fields:
                     abstract_file = abstractdir / Path(key + '.txt')
-                    with open(str(abstract_file), mode='w', encoding='utf8') as f:
-                        text = LatexNodes2Text().latex_to_text(item.fields['abstract'])
+                    abstract = item.fields['abstract']
+                    with open(str(abstract_file),
+                              mode='w', encoding='utf8') as f:
+                        text = LatexNodes2Text().latex_to_text(abstract)
                         f.write('\n'.join(textwrap.wrap(text, width=80)))
-
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
@@ -210,8 +211,8 @@ class PublicationDatabase(object):
                                                     Path(key + '.pdf'))
             if 'abstract' in item.fields:
                 item.fields['publipy_abstracturl'] = str(self.prefix /
-                                                          Path('abstracts') /
-                                                          Path(key + '.txt'))
+                                                         Path('abstracts') /
+                                                         Path(key + '.txt'))
 
             self.add_entry(key, item)
 
@@ -254,16 +255,11 @@ class PublicationDatabase(object):
             print('Entry added with key key: %s' % key)
             self.add_entry(key, v)
 
-    def iter_entries(self, member=None):
-        if not member:
-            for pubs in self.publications:
-                for k, entry in pubs.entries.items():
-                    yield (k, entry)
-        else:
-            raise RuntimeError('Not implemented')
-
-    def filter_entries(self, fn=lambda e: True):
-        return [entry for entry in self.iter_entries() if fn(entry)]
+    def iter_entries(self, predicate=None):
+        predicate = predicate or (lambda x: True)
+        for k, entry in self.publications.entries.items():
+            if predicate(entry):
+                yield (k, entry)
 
     def publications_for_year(self, min_year, max_year):
         if max_year <= min_year:
@@ -275,12 +271,12 @@ class PublicationDatabase(object):
                     return True
             return False
 
-        return self.filter_entries(fn=f)
+        return self.iter_entries(predicate=f)
 
     def publications_for_type(self, type):
         def f(entry):
             return entry.type == type
-        return self.filter_entries(fn=f)
+        return self.iter_entries(predicate=f)
 
     def publications_for_member(self, member, fmt='bib'):
         raise ValueError('Not implemented')
@@ -340,9 +336,15 @@ def check_validity(entry):
 def render(args):
     db = PublicationDatabase()
     db.load()
-    publications = db.publications
-    fmt = args.fmt
     known_fmts = ['bib', 'html', 'latex']
+    # eval won't be run until function is actually called
+    predicate = lambda entry: eval(args.expr)
+    try:
+        publications = BibliographyData({k: v for k, v in
+                                            db.iter_entries(predicate=predicate)})
+    except SyntaxError:
+        raise ValueError('\'%s\' is invalid syntax.' % args.expr)
+    fmt = args.fmt
     if fmt == 'bib':
         result = publications.to_string(bib_format='bibtex')
     elif fmt == 'html':
@@ -406,6 +408,11 @@ def main():
     list_parser.add_argument('-f', '--format', required=False, type=str,
                              default='bib', help='Format to output', dest='fmt',
                              choices=['bib', 'html', 'pdf'])
+    list_parser.add_argument('-e', '--expr', required=False, type=str,
+                             default='True',
+                             help='Filter with python expression.'
+                             'A variable \'entry\' denotes the'
+                             'entry to consider', dest='expr')
     list_parser.set_defaults(func=render)
 
     args = parser.parse_args()
