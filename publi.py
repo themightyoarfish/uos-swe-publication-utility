@@ -9,11 +9,45 @@ import copy
 from itertools import combinations
 from pickle import dump, load
 from pathlib import Path
-import pybtex.database
 from pybtex.database import BibliographyData
+from pylatexenc.latex2text import LatexNodes2Text
+import pybtex.database
+import string
+from unidecode import unidecode
+from re import split
+
+private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
+                      'url_home'])
+stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
-def generate_key(entry):
+def make_plain(text):
+    return unidecode(LatexNodes2Text().latex_to_text(text))
+
+
+def generate_swe_key(entry):
+    if 'author' in entry.persons:
+        person = '-'.join(entry.persons['author'][0].last_names)
+    elif 'editor' in entry.persons:
+        person = '-'.join(entry.persons['editor'][0].last_names)
+    else:
+        person = ''
+    title_field = 'title' if 'title' in entry.fields else 'booktitle'
+    try:
+        title_word = next(make_plain(w)
+                          for w in split(r'[\s:.,]', entry.fields[title_field])
+                          if make_plain(w).lower() not in stopwords
+                          and w not in string.punctuation)
+    except StopIteration:
+        title_word = ''
+    year = entry.fields['year'] if 'year' in entry.fields else ''
+
+    person = make_plain(person).lower()
+    title_word = title_word.lower()
+    return ':'.join([person, title_word, year])
+
+
+def generate_key_bibtool(entry):
     """ Generate a key like bibtool would create with the following options
             key.base=lower
             key.format=short
@@ -44,7 +78,9 @@ def generate_suffix(key, keyset, current_suffix=''):
 def disambiguate(key, keyset):
     """Disambiguate key over set of keys by successively appending more
     alphanumeric numbers."""
-    return key + '.' + generate_suffix(key, keyset)
+    if key not in keyset:
+        return key
+    return key + ':' + generate_suffix(key, keyset)
 
 
 class PublicationDatabase(object):
@@ -88,7 +124,7 @@ class PublicationDatabase(object):
         """
         if database_file:
             self.database_file = database_file
-            self.prefix = Path(prefix) if prefix else Path(self.database_file).parent
+            self.prefix = Path(prefix) if prefix else Path(database_file).parent
             self.populate(database_file)
 
     def __delitem__(self, key):
@@ -131,13 +167,11 @@ class PublicationDatabase(object):
             for key, item in self.publications.entries.items():
                 # make copy without our secret fields
                 item = copy.copy(item)
-                item.fields = {k: v for k, v in
-                                                item.fields.items() if k not in
-                                                ['publipy_biburl',
-                                                 'publipy_pdfurl']}
+                item.fields = {k: v for k, v in item.fields.items()
+                               if k not in private_fields}
                 bibfile = bibdir / Path(key + '.bib')
                 BibliographyData({key: item}).to_file(str(bibfile),
-                                                        bib_format='bibtex')
+                                                      bib_format='bibtex')
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
@@ -151,15 +185,18 @@ class PublicationDatabase(object):
         :type database_file: str
         """
 
-        self.publications = read_bibfile(database_file)
-        for key, item in self.publications.entries.items():
+        self.publications = BibliographyData()
+        publications = read_bibfile(database_file).entries
+        for item in publications.values():
+            key = generate_swe_key(item)
             item.fields['key'] = key
             if 'publipy_biburl' not in item.fields:
                 item.fields['publipy_biburl'] = str(self.prefix / Path('bib') /
-                                                     Path(key + '.bib'))
+                                                    Path(key + '.bib'))
             if 'publipy_pdfurl' not in item.fields:
                 item.fields['publipy_pdfurl'] = str(self.prefix / Path('pdf') /
-                                                     Path(key + '.pdf'))
+                                                    Path(key + '.pdf'))
+            self.add_entry(key, item)
 
     def find_duplicates(self, comparator=None):
         """Find suspected duplicates.
@@ -186,7 +223,7 @@ class PublicationDatabase(object):
                              type(entry))
         else:
             if key in self.publications.entries:
-                raise ValueError('Key already taken.')
+                key = disambiguate(key, self.publications.entries.keys())
             self.publications.entries[key] = entry
 
     def add_bibdata(self, entries):
@@ -195,7 +232,7 @@ class PublicationDatabase(object):
         else:
             bibdata = entries  # Assume it's BibliographyData
         for v in bibdata.entries.values():
-            key = disambiguate(generate_key(v),
+            key = disambiguate(generate_key_bibtool(v),
                                self.publications.entries.keys())
             print('Entry added with key key: %s' % key)
             self.add_entry(key, v)
