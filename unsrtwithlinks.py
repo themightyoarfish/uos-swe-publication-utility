@@ -30,8 +30,6 @@ class Style(UnsrtStyle):
                     person.text = self.format_name(person,
                                                    self.abbreviate_names)
 
-            # if 'title' in entry.fields and 'Geodatenvisualisierung' in
-            # entry.fields['title']: import ipdb; ipdb.set_trace()
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
             text = text + Text(String(' ['),
@@ -50,4 +48,5 @@ class Style(UnsrtStyle):
                                         Tag('tt', 'abstract')),
                                    String(']')
                                    )
+
             yield FormattedEntry(entry.key, text, label)
