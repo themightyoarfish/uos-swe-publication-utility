@@ -15,6 +15,7 @@ import pybtex.database
 import string
 from unidecode import unidecode
 from re import split
+import textwrap
 
 private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
                       'url_home'])
@@ -162,16 +163,27 @@ class PublicationDatabase(object):
         if self.database_file:
             self.publications.to_file(self.database_file, bib_format='bibtex')
             bibdir = self.prefix / Path('bib')
+            abstractdir = self.prefix / Path('abstracts')
             if not bibdir.exists():
                 bibdir.mkdir()
+            if not abstractdir.exists():
+                abstractdir.mkdir()
             for key, item in self.publications.entries.items():
                 # make copy without our secret fields
                 item = copy.copy(item)
                 item.fields = {k: v for k, v in item.fields.items()
                                if k not in private_fields}
+                # write single bib entry
                 bibfile = bibdir / Path(key + '.bib')
                 BibliographyData({key: item}).to_file(str(bibfile),
                                                       bib_format='bibtex')
+                # write abstract separately, if present. Format to 80 characters
+                if 'abstract' in item.fields:
+                    abstract_file = abstractdir / Path(key + '.txt')
+                    with open(str(abstract_file), mode='w', encoding='utf8') as f:
+                        text = LatexNodes2Text().latex_to_text(item.fields['abstract'])
+                        f.write('\n'.join(textwrap.wrap(text, width=80)))
+
 
     def load(self):
         """Deserialize self from pickled file named 'db.pckl'."""
