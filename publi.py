@@ -184,7 +184,7 @@ class PublicationDatabase(object):
                     abstract = item.fields['abstract']
                     with open(str(abstract_file),
                               mode='w', encoding='utf8') as f:
-                        text = LatexNodes2Text().latex_to_text(abstract)
+                        text = make_plain(abstract)
                         f.write('\n'.join(textwrap.wrap(text, width=80)))
 
     def load(self):
@@ -334,19 +334,57 @@ def check_validity(entry):
     pass
 
 
+def print_all_authors():
+    db = PublicationDatabase()
+    db.load()
+    entries = db.publications.entries.values()
+
+    def textify(p):
+        return make_plain(' '.join(p.last_names))
+
+    def get_persons(e):
+        return e.persons.values()
+
+    unique_persons = set(textify(p) for persons in map(get_persons, entries) for
+                         role in persons for p in role)
+    import pprint
+    pprint.pprint(sorted(unique_persons))
+
+
+def filtered_entries(database, args):
+    BibData = BibliographyData  # shorter
+    try:
+        def predicate_expr(entry):
+            return eval(args.expr)  # won't be evaluated before call
+
+        def predicate_person(entry):
+            for role in entry.persons.values():
+                for p in role:
+                    s1 = make_plain(' '.join(p.last_names))
+                    s2 = args.person
+                    # TODO: Implement more robust matching here
+                    equal = sum(c1 == c2 for c1, c2 in zip(s1, s2))
+                    if (equal / len(s2)) >= 0.8:
+                        return True
+            return False
+
+        def predicate(entry):
+            return predicate_expr(entry) and predicate_person(entry)
+
+        publications = BibData({k: v for k, v in
+                                database.iter_entries(predicate=predicate)})
+        return publications
+    except SyntaxError:
+        raise ValueError('\'%s\' is invalid syntax.' % args.expr)
+
+
 def render(args):
     db = PublicationDatabase()
     db.load()
-    known_fmts = ['bib', 'html', 'latex']
+    known_fmts = ['bib', 'html', 'text', 'pdf']
 
-    def predicate(entry):
-        # eval won't be run until function is actually called
-        return eval(args.expr)
-    try:
-        publications = BibliographyData({k: v for k, v in
-                                         db.iter_entries(predicate=predicate)})
-    except SyntaxError:
-        raise ValueError('\'%s\' is invalid syntax.' % args.expr)
+    publications = filtered_entries(db, args)
+
     fmt = args.fmt
     if fmt == 'bib':
         result = publications.to_string(bib_format='bibtex')
@@ -407,6 +445,7 @@ def main():
                             help='bibtex entry to add')
     add_parser.add_argument('-f', '--file', required=False, type=str,
                             help='Bibfile to add to the database')
+
     add_parser.set_defaults(func=add)
     # TODO: Fuzzy author guessing
 
@@ -422,9 +461,12 @@ def main():
                              dest='out')
     list_parser.add_argument('-e', '--expr', required=False, type=str,
                              default='True',
-                             help='Filter with python expression.'
-                             'A variable \'entry\' denotes the'
+                             help='Filter with python expression. '
+                             'A variable \'entry\' denotes the '
                              'entry to consider', dest='expr')
+    list_parser.add_argument('-p', '--person', required=False, type=str,
+                             help='Print only publications this person is '
+                             'involved in (be it author or editor)')
     list_parser.set_defaults(func=render)
 
     args = parser.parse_args()
