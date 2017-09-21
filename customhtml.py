@@ -1,5 +1,6 @@
 import pybtex
 from pybtex.backends.html import Backend as HTMLBackend
+from plugin_data import plugin_data
 
 PROLOGUE = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
@@ -49,6 +50,15 @@ class Backend(HTMLBackend):
         self.output(u'<dt>%s</dt>\n' % label)
         self.output(u'<dd>%s</dd>\n' % text)
 
+    def write_epilogue(self):
+        if plugin_data['write_html_wrapper']:
+            super().write_epilogue()
+        else:
+            pass
+
     def write_prologue(self):
-        encoding = self.encoding or pybtex.io.get_default_encoding()
-        self.output(PROLOGUE.format(encoding=encoding, stylesheet=STYLESHEET))
+        if plugin_data['write_html_wrapper']:
+            encoding = self.encoding or pybtex.io.get_default_encoding()
+            self.output(PROLOGUE.format(encoding=encoding, stylesheet=STYLESHEET))
+        else:
+            pass

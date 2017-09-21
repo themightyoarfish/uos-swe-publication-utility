@@ -389,6 +389,9 @@ def render(args):
     if fmt == 'bib':
         result = publications.to_string(bib_format='bibtex')
     elif fmt == 'html':
+        from plugin_data import plugin_data
+        plugin_data['label_start'] = 0
+        plugin_data['write_html_wrapper'] = args.complete_html
         result = pybtex.format_from_string(
             publications.to_string(bib_format='bibtex'),
             'gerunsrtwithlinks',
@@ -467,6 +470,12 @@ def main():
     list_parser.add_argument('-p', '--person', required=False, type=str,
                              help='Print only publications this person is '
                              'involved in (be it author or editor)')
+    list_parser.add_argument('-c', '--complete_html', required=False,
+                             action='store_true', dest='complete_html',
+                             help='Whether or not to produce valid HTML '
+                             'or only the <dl> element to place inside another '
+                             'document. Ignored in any format except html')
+
     list_parser.set_defaults(func=render)
 
     args = parser.parse_args()
