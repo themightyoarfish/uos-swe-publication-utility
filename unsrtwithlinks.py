@@ -3,10 +3,7 @@ from pybtex.style.template import field, sentence
 from pybtex.style import FormattedEntry
 from pybtex.richtext import Text, String, HRef, Tag
 from pybtex.plugin import find_plugin
-
-
-# dirty global field, but no way to pass args to LabelStyle or other plugin :|
-LABEL_START = 0
+from plugin_data import plugin_data
 
 
 class Style(UnsrtStyle):
@@ -18,13 +15,12 @@ class Style(UnsrtStyle):
         if not label_style:
             # must be done before calling super()
             label_style = find_plugin('pybtex.style.labels', 'numberwithoffset')
-        label_style.label_start = LABEL_START
+        label_style.label_start = plugin_data['label_start']
 
         super().__init__(label_style=label_style, name_style=name_style,
                          sorting_style=sorting_style,
                          abbreviate_names=abbreviate_names,
                          min_crossrefs=min_crossrefs, **kwargs)
-
 
     def format_title(self, e, which_field, as_sentence=True):
         formatted_title = field(
