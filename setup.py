@@ -12,5 +12,6 @@ setup(name='Pybtex HTML rendering extensions',
                                       gerunsrtwithlinks:Style'
                                       ],
           'pybtex.backends': 'customhtml = customhtml:Backend',
+          'pybtex.style.labels': 'numberwithoffset = labels.numberwithoffset:LabelStyle',
       },
 )
