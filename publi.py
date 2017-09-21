@@ -7,6 +7,7 @@
 import argparse
 import copy
 from itertools import combinations
+from difflib import SequenceMatcher
 from pickle import dump, load
 from pathlib import Path
 from pybtex.database import BibliographyData
@@ -16,6 +17,7 @@ import string
 from unidecode import unidecode
 from re import split
 import textwrap
+from pdf_util import pdf_for_pub
 
 private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
                       'url_home', 'publipy_abstracturl'])
@@ -108,11 +110,24 @@ class PublicationDatabase(object):
         if key1 == key2:
             return True
         else:
-            fields1, fields2 = (entry1.fields, entry2.fields)
-            if 'title' in fields1.keys() and 'title' in fields2.keys():
-                return fields1['title'] == fields2['title']
+            if 'title' in entry1.fields:
+                title1 = entry1.fields['title']
+            elif 'booktitle' in entry1.fields:
+                title1 = entry1.fields['booktitle']
             else:
-                return False
+                raise ValueError('Entry has neither title nor booktitle')
+            if 'title' in entry2.fields:
+                title2 = entry2.fields['title']
+            elif 'booktitle' in entry2.fields:
+                title2 = entry2.fields['booktitle']
+            else:
+                raise ValueError('Entry has neither title nor booktitle')
+
+            fields1, fields2 = (entry1.fields, entry2.fields)
+            similarity = SequenceMatcher(None, title1.split(),
+                                                title2.split(),
+                                                autojunk=False).ratio()
+            return similarity > 0.8
 
     def __init__(self, database_file=None, prefix=None):
         """Create a database by reading all the .bib files listed in a file.
@@ -138,12 +153,11 @@ class PublicationDatabase(object):
         :param key: Bibliography key to delete
         :type key: str
         """
-        for publications in self.publications.values():
-            for k in publications.entries.keys():
-                if k == key:
-                    # dirty hack since CaseInsensitiveOrderedDict does not
-                    # support deletion
-                    del publications.entries.__dict__['_dict'][k]
+        for k in self.publications.entries.keys():
+            if k == key:
+                # dirty hack since CaseInsensitiveOrderedDict does not
+                # support deletion
+                del self.publications.entries.__dict__['_dict'][k]
 
         # clean up bib file and pdf
         bibfile = self.prefix / Path('bib') / Path('%s.bib' % key)
@@ -203,7 +217,6 @@ class PublicationDatabase(object):
         publications = read_bibfile(database_file).entries
         for item in publications.values():
             key = generate_key_swe(item)
-            item.fields['key'] = key
             if 'publipy_biburl' not in item.fields:
                 item.fields['publipy_biburl'] = str(self.prefix / Path('bib') /
                                                     Path(key + '.bib'))
@@ -225,15 +238,15 @@ class PublicationDatabase(object):
         if not comparator:
             comparator = PublicationDatabase.default_comparator
         suspects = []
-        for publications in self.publications:
-            # it seems that OrderedCaseInsensitiveDict, which inherits from
-            # MutableMapping, does not provide an items() iterator, so we need
-            # to form tuples manually
-            combos = combinations([(key, publications.entries[key])
-                                   for key in publications.entries], 2)
-            for (item1, item2) in combos:
-                if comparator(item1, item2):
-                    suspects.append((item1, item2))
+        # it seems that OrderedCaseInsensitiveDict, which inherits from
+        # MutableMapping, does not provide an items() iterator, so we need
+        # to form tuples manually
+        combos = combinations([(key, self.publications.entries[key])
+                                for key in self.publications.entries], 2)
+        for (item1, item2) in combos:
+            if comparator(item1, item2):
+                # return only the keys
+                suspects.append((item1[0], item2[0]))
         return suspects
 
     def add_entry(self, key, entry):
@@ -243,7 +256,12 @@ class PublicationDatabase(object):
         else:
             if key in self.publications.entries:
                 key = disambiguate(key, self.publications.entries.keys())
+                entry.fields['key'] = key
             self.publications.entries[key] = entry
+
+
+    def __getitem__(self, key):
+        return self.publications.entries[key]
 
     def add_bibdata(self, entries):
         if isinstance(entries, str):
@@ -305,14 +323,18 @@ def build(args):
 
     """
     pubdata = PublicationDatabase(args.database)
-    # duplicates = pubdata.find_duplicates()
+    duplicates = pubdata.find_duplicates()
+    print("Suspected duplicates: ")
+    for key1, key2 in duplicates:
+        bib1 = BibliographyData({key1: pubdata[key1]})
+        bib2 = BibliographyData({key2: pubdata[key2]})
+        print("\t{} == {}".format(bib1.to_string(bib_format='bibtex'),
+                                  bib2.to_string(bib_format='bibtex')))
+        delete = input('Delete this? (y/n) ')
+        if delete.lower() in ['y', 'ye', 'yes', 'yo']:
+            pubdata.delete(key1)
+            import ipdb; ipdb.set_trace()
     pubdata.save()
-    # print("Suspected duplicates: ")
-    # for item1, item2 in duplicates:
-    #     print("\t{} == {}".format(item1[0], item2[0]))
-    # for key, entry in pubdata.iter_entries():
-    #     print(pdf_for_pub(entry, args.pdf_loc))
-    # return pubdata
 
 
 def add(args):
