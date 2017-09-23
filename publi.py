@@ -380,15 +380,18 @@ def filtered_entries(database, args):
             return eval(args.expr)  # won't be evaluated before call
 
         def predicate_person(entry):
-            for role in entry.persons.values():
-                for p in role:
-                    s1 = make_plain(' '.join(p.last_names))
-                    s2 = args.person
-                    # TODO: Implement more robust matching here
-                    equal = sum(c1 == c2 for c1, c2 in zip(s1, s2))
-                    if (equal / len(s2)) >= 0.8:
-                        return True
-            return False
+            if not args.person:
+                return True
+            else:
+                for role in entry.persons.values():
+                    for p in role:
+                        s1 = make_plain(' '.join(p.last_names))
+                        s2 = args.person
+                        # TODO: Implement more robust matching here
+                        equal = sum(c1 == c2 for c1, c2 in zip(s1, s2))
+                        if (equal / len(s2)) >= 0.8:
+                            return True
+                return False
 
         def predicate(entry):
             return predicate_expr(entry) and predicate_person(entry)

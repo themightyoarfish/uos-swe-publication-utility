@@ -69,10 +69,10 @@ def get_author_info(entry):
                                   % type(entry))
 
 
-def pdf_for_pub(bibdata, pdf_folder):
+def pdf_for_pub(entry, pdf_folder):
     """Attempt to guess which pdf file might belong to a given bibliography entry.
 
-    :bibdata: BibliographyData object
+    :entry: BibliographyData object
     :pdf_folder: str denoting folder location
     :returns: str
 
@@ -86,9 +86,10 @@ def pdf_for_pub(bibdata, pdf_folder):
         match = None
         confidence = 0
         for file in pdf_path.iterdir():
-            author_info     = get_author_info(bibdata)
-            title_info      = get_title_info(bibdata)
+            author_info = get_author_info(entry)
+            title_info = get_title_info(entry)
             author_info_pdf = get_author_info(file)
+            import ipdb; ipdb.set_trace()
             confidence_title = search_for_string(file, title_info)
             confidence_author = SequenceMatcher(None, author_info_pdf.split(),
                                                 author_info.split(),
@@ -97,9 +98,16 @@ def pdf_for_pub(bibdata, pdf_folder):
             if confidence < new_confidence:
                 confidence = new_confidence
                 match = file
-        if match and 'title' in bibdata.fields:
-            print('Match for %s: %s, score=%d' % (bibdata.title, match,
-                                                  confidence))
+
+        if match and confidence > 0.5:
+            if 'title' in entry.fields:
+                title = entry.fields['title']
+            elif 'booktitle' in entry.fields:
+                title = entry.fields['booktitle']
+            else:
+                title = '<no title>'
+            print('Match for %s: %s, score=%f' % (title, match, confidence))
+
         return match
 
 
@@ -119,20 +127,20 @@ def search_for_string(pdf, text):
     pdf_text = ' '.join([page.extractText() for page in pdf.pages])
     # remove newlines and superfluous spaces
     pdf_text = re.sub('[\n\s]+', ' ', pdf_text).split()
-    # title should occur in first third (hopefully)
-    pdf_text = pdf_text[:len(pdf_text)//3]
+    # title should occur in first fifth (hopefully)
+    pdf_text = pdf_text[:len(pdf_text)//5]
     best_score = 0
     best_match = None
     print("Searching for: %s" % text)
     for start in range(0, len(pdf_text)-len(text)):
         subsequence = pdf_text[start:start+len(text)]
-        if text_set.intersection(set(subsequence)) == set():
+        if len(text_set.intersection(set(subsequence))) < 2:
             continue
         score = SequenceMatcher(None, subsequence, text, autojunk=False).ratio()
         if score > best_score:
             best_score = score
             best_match = subsequence
     if best_match:
-        print("Best match for\n%s:\n%s\nscore=%d" % (text, best_match,
+        print("Best match for\n%s:\n%s\nscore=%f" % (text, best_match,
                                                      best_score))
     return best_score
