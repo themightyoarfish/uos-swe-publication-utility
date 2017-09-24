@@ -176,7 +176,7 @@ class PublicationDatabase(object):
 
         # update the original database file
         if self.database_file:
-            self.publications.to_file(self.database_file, bib_format='bibtex')
+            self.publications.to_file(self.database_file, bib_format='custombibtex')
             bibdir = self.prefix / Path('bib')
             abstractdir = self.prefix / Path('abstracts')
             if not bibdir.exists():
@@ -191,7 +191,7 @@ class PublicationDatabase(object):
                 # write single bib entry
                 bibfile = bibdir / Path(key + '.bib')
                 BibliographyData({key: item}).to_file(str(bibfile),
-                                                      bib_format='bibtex')
+                                                      bib_format='custombibtex')
                 # write abstract separately, if present. Format to 80 characters
                 if 'abstract' in item.fields:
                     abstract_file = abstractdir / Path(key + '.txt')
@@ -323,17 +323,16 @@ def build(args):
 
     """
     pubdata = PublicationDatabase(args.database)
-    duplicates = pubdata.find_duplicates()
-    print("Suspected duplicates: ")
-    for key1, key2 in duplicates:
-        bib1 = BibliographyData({key1: pubdata[key1]})
-        bib2 = BibliographyData({key2: pubdata[key2]})
-        print("\t{} == {}".format(bib1.to_string(bib_format='bibtex'),
-                                  bib2.to_string(bib_format='bibtex')))
-        delete = input('Delete this? (y/n) ')
-        if delete.lower() in ['y', 'ye', 'yes', 'yo']:
-            pubdata.delete(key1)
-            import ipdb; ipdb.set_trace()
+    # duplicates = pubdata.find_duplicates()
+    # print("Suspected duplicates: ")
+    # for key1, key2 in duplicates:
+    #     bib1 = BibliographyData({key1: pubdata[key1]})
+    #     bib2 = BibliographyData({key2: pubdata[key2]})
+    #     print("\t{} == {}".format(bib1.to_string(bib_format='bibtex'),
+    #                               bib2.to_string(bib_format='bibtex')))
+    #     delete = input('Delete this? (y/n) ')
+    #     if delete.lower() in ['y', 'ye', 'yes', 'yo']:
+    #         pubdata.delete(key1)
     pubdata.save()
 
 
@@ -418,7 +417,7 @@ def render(args):
         plugin_data['label_start'] = 0
         plugin_data['write_html_wrapper'] = args.complete_html
         result = pybtex.format_from_string(
-            publications.to_string(bib_format='bibtex'),
+            publications.to_string(bib_format='custombibtex'),
             'gerunsrtwithlinks',
             citations=publications.entries.keys(),
             bib_format='bibtex',
