@@ -13,5 +13,6 @@ setup(name='Pybtex HTML rendering extensions',
                                       ],
           'pybtex.backends': 'customhtml = customhtml:Backend',
           'pybtex.style.labels': 'numberwithoffset = labels.numberwithoffset:LabelStyle',
+          'pybtex.database.output': 'custombibtex = output.custombibtex:Writer',
       },
 )
