@@ -1,7 +1,6 @@
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
-from pybtex.style.template import field, sentence
+from pybtex.style.template import field, sentence, href, join, optional, tag
 from pybtex.style import FormattedEntry
-from pybtex.richtext import Text, String, HRef, Tag
 from pybtex.plugin import find_plugin
 from plugin_data import plugin_data
 
@@ -47,21 +46,43 @@ class Style(UnsrtStyle):
 
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
-            text = text + Text(String('['),
-                               HRef(entry.fields['publipy_biburl'],
-                                    Tag('tt', 'bib')),
-                               String('] ')
-                               )
-            text = text + Text(String('['),
-                               HRef(entry.fields['publipy_pdfurl'],
-                                    Tag('tt', 'pdf')),
-                               String(']')
-                               )
-            if 'publipy_abstracturl' in entry.fields:
-                text = text + Text(String('['),
-                                   HRef(entry.fields['publipy_abstracturl'],
-                                        Tag('tt', 'abstract')),
-                                   String(']')
-                                   )
+
+            bib = optional[
+                join['[',
+                     tag('tt')[
+                         href[
+                             field('publipy_biburl', raw=True),
+                             'bib'
+                         ]
+                     ],
+                     ']'
+                     ]
+            ]
+
+            pdf = optional[
+                join['[',
+                     tag('tt')[
+                         href[
+                             field('publipy_pdfurl', raw=True),
+                             'pdf'
+                         ]
+                     ],
+                     ']'
+                     ]
+            ]
+
+            abstract = optional[
+                join['[',
+                     tag('tt')[
+                         href[
+                             field('publipy_abstracturl', raw=True),
+                             'abstract'
+                         ]
+                     ],
+                     ']'
+                     ]
+            ]
+            text += ' '  # make some space
+            text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
 
             yield FormattedEntry(entry.key, text, label)
