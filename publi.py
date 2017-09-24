@@ -5,10 +5,11 @@
 ..moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
 """
 import argparse
+import shutil
 import copy
+from pickle import dump, load
 from itertools import combinations
 from difflib import SequenceMatcher
-from pickle import dump, load
 from pathlib import Path
 from pybtex.database import BibliographyData
 from pylatexenc.latex2text import LatexNodes2Text
@@ -127,7 +128,7 @@ class PublicationDatabase(object):
                                          autojunk=False).ratio()
             return similarity > 0.8
 
-    def __init__(self, database_file=None, prefix=None):
+    def __init__(self, database_file=None, pdf_dir=None, prefix=None):
         """Create a database by reading all the .bib files listed in a file.
 
         :param database_file: Json file listing members and associated file
@@ -140,7 +141,7 @@ class PublicationDatabase(object):
         if database_file:
             self.database_file = database_file
             self.prefix = Path(prefix) if prefix else Path(database_file).parent
-            self.populate(database_file)
+            self.populate(database_file, pdf_dir)
 
     def __delitem__(self, key):
         self.delete(key)
@@ -205,7 +206,7 @@ class PublicationDatabase(object):
         with open('db.pckl', mode='rb') as f:
             self.publications = load(f)
 
-    def populate(self, database_file):
+    def populate(self, database_file, pdf_dir):
         """Collect all bibdata from all files into one big-ass database.
 
         :param database_file: File listing members and locations of bibfiles
@@ -214,18 +215,27 @@ class PublicationDatabase(object):
 
         self.publications = BibliographyData()
         publications = read_bibfile(database_file).entries
-        for item in publications.values():
+
+        # ensure the pdf directory exists
+        if pdf_dir and not (self.prefix / Path('pdf')).exists():
+            (self.prefix / Path('pdf')).mkdir()
+
+        for oldkey, item in publications.items():
             key = generate_key_swe(item)
             if 'publipy_biburl' not in item.fields:
                 item.fields['publipy_biburl'] = str(self.prefix / Path('bib') /
                                                     Path(key + '.bib'))
-            if 'publipy_pdfurl' not in item.fields:
-                item.fields['publipy_pdfurl'] = str(self.prefix / Path('pdf') /
-                                                    Path(key + '.pdf'))
             if 'abstract' in item.fields:
                 item.fields['publipy_abstracturl'] = str(self.prefix /
                                                          Path('abstracts') /
                                                          Path(key + '.txt'))
+
+            if pdf_dir and 'publipy_pdfurl' not in item.fields:
+                pdf_path_old = Path(pdf_dir) / Path(oldkey + '.pdf')
+                if pdf_path_old.exists() and pdf_path_old.is_file():
+                    pdf_path_new = self.prefix / Path('pdf') / Path(key + '.pdf')
+                    shutil.copy(str(pdf_path_old), str(pdf_path_new))
+                    item.fields['publipy_pdfurl'] = str(pdf_path_new)
 
             self.add_entry(key, item)
 
@@ -301,13 +311,6 @@ class PublicationDatabase(object):
         #     raise ValueError("Unknown group member.")
         # return self.publications['member']
 
-    def build_publication_map(self, pdf_folder):
-        from pdf_util import pdf_for_pub
-        return {
-            key: pdf_for_pub(entry, pdf_folder)
-            for key, entry in self.iter_entries()
-        }
-
 
 def build(args):
     """Build a :class: `PublicationDatabase` from the arguments passed.
@@ -320,7 +323,7 @@ def build(args):
     :rtype: PublicationDatabase
 
     """
-    pubdata = PublicationDatabase(args.database)
+    pubdata = PublicationDatabase(args.database, args.pdf_loc)
     # duplicates = pubdata.find_duplicates()
     # print("Suspected duplicates: ")
     # for key1, key2 in duplicates:
@@ -457,8 +460,9 @@ def main():
     build_parser = subparsers.add_parser('build', help='Build a database')
     build_parser.add_argument('-d', '--database', required=True, type=str,
                               help=('Path to .bib file with all entries'))
-    # build_parser.add_argument('-p', '--pdfs', required=True, type=str,
-    #                           help='Path to pdf folder.', dest='pdf_loc')
+    build_parser.add_argument('-p', '--pdfs', required=False, default=None,
+                              type=str, help='Path to pdf folder.',
+                              dest='pdf_loc')
     build_parser.set_defaults(func=build)
 
     ############################################################################
