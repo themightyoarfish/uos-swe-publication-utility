@@ -12,4 +12,3 @@ class LabelStyle(NumberStyle):
             raise RuntimeError('Set label_start property first')
         for number, entry in enumerate(sorted_entries):
             yield six.text_type(number + 1 + self.label_start)
-

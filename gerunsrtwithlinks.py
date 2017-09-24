@@ -22,9 +22,9 @@ def localize_month(m):
     return month
 
 
-date = words [optional_field('month',
-                             apply_func=lambda x: localize_month(x)),
-              field('year')]
+date = words[optional_field('month',
+                            apply_func=lambda x: localize_month(x)),
+             field('year')]
 
 # use new date instead of module-level function from unsrt.py
 pybtex.style.formatting.unsrt.date = date
@@ -37,7 +37,7 @@ class Style(UnsrtStyle):
         """Override for german"""
         formatted_names = names(role, sep=', ', sep2=' und ', last_sep=' und ')
         if as_sentence:
-            return sentence [formatted_names]
+            return sentence[formatted_names]
         else:
             return formatted_names
 
@@ -50,50 +50,50 @@ class Style(UnsrtStyle):
             # just return the template that will throw the exception
             return editors
         word = 'Hrsg.'
-        result = join(sep=', ') [editors, word]
+        result = join(sep=', ')[editors, word]
         if as_sentence:
-            return sentence [result]
+            return sentence[result]
         else:
             return result
 
     def format_volume_and_series(self, e, as_sentence=True):
-        volume_and_series = optional [
-            words [
-                together ['Band', field('volume')], optional [
-                    words ['von', field('series')]
+        volume_and_series = optional[
+            words[
+                together['Band', field('volume')], optional[
+                    words['von', field('series')]
                 ]
             ]
         ]
-        number_and_series = optional [
-            words [
-                join(sep=Symbol('nbsp')) ['Nr.' if as_sentence else 'nr.',
-                                          field('number')],
-                optional [
-                    words ['in', field('series')]
+        number_and_series = optional[
+            words[
+                join(sep=Symbol('nbsp'))['Nr.' if as_sentence else 'nr.',
+                                         field('number')],
+                optional[
+                    words['in', field('series')]
                 ]
             ]
         ]
         series = optional_field('series')
-        result = first_of [
+        result = first_of[
             volume_and_series,
             number_and_series,
             series,
         ]
         if as_sentence:
-            return sentence(capfirst=True) [result]
+            return sentence(capfirst=True)[result]
         else:
             return result
 
     def format_chapter_and_pages(self, e):
         pages = field('pages', apply_func=dashify)
-        return join(sep=', ') [
-            optional [together ['Kapitel', field('chapter')]],
-            optional [together ['p.', pages]],
+        return join(sep=', ')[
+            optional[together['Kapitel', field('chapter')]],
+            optional[together['p.', pages]],
         ]
 
     def format_edition(self, e):
-        return optional [
-            words [
+        return optional[
+            words[
                 field('edition', apply_func=lambda x: x.lower()),
                 'Auflage',
             ]

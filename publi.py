@@ -17,7 +17,6 @@ import string
 from unidecode import unidecode
 from re import split
 import textwrap
-from pdf_util import pdf_for_pub
 
 private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
                       'url_home', 'publipy_abstracturl'])
@@ -123,10 +122,9 @@ class PublicationDatabase(object):
             else:
                 raise ValueError('Entry has neither title nor booktitle')
 
-            fields1, fields2 = (entry1.fields, entry2.fields)
             similarity = SequenceMatcher(None, title1.split(),
-                                                title2.split(),
-                                                autojunk=False).ratio()
+                                         title2.split(),
+                                         autojunk=False).ratio()
             return similarity > 0.8
 
     def __init__(self, database_file=None, prefix=None):
@@ -176,7 +174,8 @@ class PublicationDatabase(object):
 
         # update the original database file
         if self.database_file:
-            self.publications.to_file(self.database_file, bib_format='custombibtex')
+            self.publications.to_file(self.database_file,
+                                      bib_format='custombibtex')
             bibdir = self.prefix / Path('bib')
             abstractdir = self.prefix / Path('abstracts')
             if not bibdir.exists():
@@ -242,7 +241,7 @@ class PublicationDatabase(object):
         # MutableMapping, does not provide an items() iterator, so we need
         # to form tuples manually
         combos = combinations([(key, self.publications.entries[key])
-                                for key in self.publications.entries], 2)
+                               for key in self.publications.entries], 2)
         for (item1, item2) in combos:
             if comparator(item1, item2):
                 # return only the keys
@@ -258,7 +257,6 @@ class PublicationDatabase(object):
                 key = disambiguate(key, self.publications.entries.keys())
                 entry.fields['key'] = key
             self.publications.entries[key] = entry
-
 
     def __getitem__(self, key):
         return self.publications.entries[key]

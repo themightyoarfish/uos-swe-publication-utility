@@ -28,7 +28,7 @@ class Style(UnsrtStyle):
         )
 
         if as_sentence:
-            return sentence(capfirst=False) [ formatted_title ]
+            return sentence(capfirst=False)[formatted_title]
         else:
             return formatted_title
 
@@ -47,18 +47,18 @@ class Style(UnsrtStyle):
 
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
-            text = text + Text(String(' ['),
+            text = text + Text(String('['),
                                HRef(entry.fields['publipy_biburl'],
                                     Tag('tt', 'bib')),
                                String('] ')
                                )
-            text = text + Text(String(' ['),
+            text = text + Text(String('['),
                                HRef(entry.fields['publipy_pdfurl'],
                                     Tag('tt', 'pdf')),
                                String(']')
                                )
             if 'publipy_abstracturl' in entry.fields:
-                text = text + Text(String(' ['),
+                text = text + Text(String('['),
                                    HRef(entry.fields['publipy_abstracturl'],
                                         Tag('tt', 'abstract')),
                                    String(']')
