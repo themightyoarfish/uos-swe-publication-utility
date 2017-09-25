@@ -82,7 +82,21 @@ class Style(UnsrtStyle):
                      ']'
                      ]
             ]
+
+            www = join['[',
+                       tag('tt')[
+                           href[
+                               field('url_home', raw=True),
+                               'www'
+                           ]
+                       ],
+                       ']'
+                       ]
+
             text += ' '  # make some space
-            text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
+            if entry.fields['url_home']:
+                text += join(sep=' ')[bib, pdf, abstract, www].format_data(entry)
+            else:
+                text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
 
             yield FormattedEntry(entry.key, text, label)

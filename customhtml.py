@@ -15,32 +15,8 @@ PROLOGUE = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <dl>
 '''
 
-STYLESHEET = r'''dl {
-    width: 100%;
-    overflow: hidden;
-    padding: 0;
-    margin: 0
-}
-dt {
-    float: left;
-    width: 5%;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-}
-dt::before {
-    content: "["
-}
-dt::after {
-    content: "]"
-}
-dd {
-    float: left;
-    width: 95%;
-    padding: 0;
-    margin: 0;
-    margin-bottom: 1em
-}'''
+with open('publications.css') as css_file:
+    STYLESHEET = css_file.read()
 
 
 class Backend(HTMLBackend):
@@ -59,6 +35,7 @@ class Backend(HTMLBackend):
     def write_prologue(self):
         if plugin_data['write_html_wrapper']:
             encoding = self.encoding or pybtex.io.get_default_encoding()
-            self.output(PROLOGUE.format(encoding=encoding, stylesheet=STYLESHEET))
+            self.output(PROLOGUE.format(encoding=encoding,
+                                        stylesheet=STYLESHEET))
         else:
             pass

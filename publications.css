@@ -1,0 +1,26 @@
+dl {
+    width: 100%;
+    overflow: hidden;
+    padding: 0;
+    margin: 0
+}
+dt {
+    float: left;
+    width: 5%;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+}
+dt::before {
+    content: "["
+}
+dt::after {
+    content: "]"
+}
+dd {
+    float: left;
+    width: 95%;
+    padding: 0;
+    margin: 0;
+    margin-bottom: 1em
+}
