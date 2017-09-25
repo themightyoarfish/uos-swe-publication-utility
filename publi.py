@@ -7,11 +7,12 @@
 import argparse
 import shutil
 import copy
+from filters import get_conjunction_filter, get_person_filter, get_mytype_filter
 from pickle import dump, load
 from itertools import combinations
 from difflib import SequenceMatcher
 from pathlib import Path
-from pybtex.database import BibliographyData
+from pybtex.database import BibliographyData, Entry
 from pylatexenc.latex2text import LatexNodes2Text
 import pybtex.database
 import string
@@ -233,7 +234,8 @@ class PublicationDatabase(object):
             if pdf_dir and 'publipy_pdfurl' not in item.fields:
                 pdf_path_old = Path(pdf_dir) / Path(oldkey + '.pdf')
                 if pdf_path_old.exists() and pdf_path_old.is_file():
-                    pdf_path_new = self.prefix / Path('pdf') / Path(key + '.pdf')
+                    pdf_path_new = self.prefix / Path('pdf') / Path(key +
+                                                                    '.pdf')
                     shutil.copy(str(pdf_path_old), str(pdf_path_new))
                     item.fields['publipy_pdfurl'] = str(pdf_path_new)
 
@@ -375,32 +377,36 @@ def print_all_authors():
 
 def filtered_entries(database, args):
     BibData = BibliographyData  # shorter
-    try:
-        def predicate_expr(entry):
-            return eval(args.expr)  # won't be evaluated before call
 
-        def predicate_person(entry):
-            if not args.person:
-                return True
-            else:
-                for role in entry.persons.values():
-                    for p in role:
-                        s1 = make_plain(' '.join(p.last_names))
-                        s2 = args.person
-                        # TODO: Implement more robust matching here
-                        equal = sum(c1 == c2 for c1, c2 in zip(s1, s2))
-                        if (equal / len(s2)) >= 0.8:
-                            return True
+    # slap onto this all constraints
+    def filter(entry):
+        return True
+
+    predicate = filter
+    if args.person:
+        predicate = get_conjunction_filter(predicate,
+                                           get_person_filter(args.person))
+    if args.mytype:
+        predicate = get_conjunction_filter(predicate,
+                                           get_mytype_filter(args.mytype))
+    if args.expr:
+        def filter_expr(entry):
+            # TODO: Don't fckn eval user input, dipshit
+            try:
+                return eval(args.expr)  # won't be evaluated before call
+            except KeyError:
+                print('Warning: KeyError')
                 return False
+        try:
+            filter_expr(Entry(''))  # eval with dummy entry to force parsing
+            predicate = get_conjunction_filter(predicate, filter_expr)
+        except SyntaxError:
+            print('\'%s\' is invalid syntax. Ignoring expression filter' %
+                  args.expr)
 
-        def predicate(entry):
-            return predicate_expr(entry) and predicate_person(entry)
-
-        publications = BibData({k: v for k, v in
-                                database.iter_entries(predicate=predicate)})
-        return publications
-    except SyntaxError:
-        raise ValueError('\'%s\' is invalid syntax.' % args.expr)
+    publications = BibData({k: v for k, v in
+                            database.iter_entries(predicate=predicate)})
+    return publications
 
 
 def render(args):
@@ -489,13 +495,15 @@ def main():
                              default='bibliography', help='File to output to',
                              dest='out')
     list_parser.add_argument('-e', '--expr', required=False, type=str,
-                             default='True',
                              help='Filter with python expression. '
                              'A variable \'entry\' denotes the '
-                             'entry to consider', dest='expr')
+                             'entry to consider')
     list_parser.add_argument('-p', '--person', required=False, type=str,
                              help='Print only publications this person is '
                              'involved in (be it author or editor)')
+    list_parser.add_argument('-t', '--mytype', required=False, type=str,
+                             help='Print only publications that have '
+                             'this mytype')
     list_parser.add_argument('-c', '--complete_html', required=False,
                              action='store_true', dest='complete_html',
                              help='Whether or not to produce valid HTML '
