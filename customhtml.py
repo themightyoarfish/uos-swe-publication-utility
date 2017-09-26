@@ -43,7 +43,6 @@ class Backend(HTMLBackend):
         else:
             pass
 
-
     def write_to_stream(self, formatted_bibliography, stream):
         """Will be called by write to file. We override to deal with the case
         where the FormattedBibliography has groups."""
@@ -61,8 +60,10 @@ class Backend(HTMLBackend):
                     if group_name != last_group:
                         self.write_section(group_name)
                     last_group = group_name
-                    self.write_entry(entry.key, entry.label, entry.text.render(self))
+                    self.write_entry(entry.key, entry.label,
+                                     entry.text.render(self))
             else:
                 for entry in entries:
-                    self.write_entry(entry.key, entry.label, entry.text.render(self))
+                    self.write_entry(entry.key, entry.label,
+                                     entry.text.render(self))
         self.write_epilogue()

@@ -1,5 +1,6 @@
 from pybtex.style.sorting.author_year_title import SortingStyle as AuthorYearSortingStyle
 
+
 class SortingStyle(AuthorYearSortingStyle):
     """Override because author-year style maps distinct items to the same key."""
 
@@ -12,9 +13,8 @@ class SortingStyle(AuthorYearSortingStyle):
             newkey = list(key) + ['']
             while tuple(newkey) in entry_dict:
                 newkey[:-1] = '*%d' % c
-                c+= 1
+                c += 1
             entry_dict[tuple(newkey)] = entry
         sorted_keys = sorted(entry_dict)
         sorted_entries = [entry_dict[key] for key in sorted_keys]
         return sorted_entries
-

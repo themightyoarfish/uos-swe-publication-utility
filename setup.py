@@ -16,4 +16,4 @@ setup(name='Pybtex HTML rendering extensions',
           'pybtex.style.sorting': 'custom_author_year_title = sorting.custom_author_year_title:SortingStyle',
           'pybtex.database.output': 'custombibtex = output.custombibtex:Writer',
       },
-)
+      )

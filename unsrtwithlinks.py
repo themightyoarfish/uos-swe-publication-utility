@@ -127,4 +127,3 @@ class Style(UnsrtStyle):
                     text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
 
                 yield group_name, FormattedEntry(entry.key, text, label)
-
