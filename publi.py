@@ -409,6 +409,11 @@ def filtered_entries(database, args):
     return publications
 
 
+def write_output(content, fname):
+    with open(fname, mode='w', encoding='utf8') as f:
+        f.write(content)
+
+
 def render(args):
     db = PublicationDatabase()
     db.load()
@@ -418,41 +423,59 @@ def render(args):
 
     fmt = args.fmt
     if fmt == 'bib':
-        result = publications.to_string(bib_format='bibtex')
+        result = publications.to_string(bib_format='custombibtex')
     elif fmt == 'html':
-        from plugin_data import plugin_data
-        plugin_data['label_start'] = 0
-        plugin_data['write_html_wrapper'] = args.complete_html
-        result = pybtex.format_from_string(
-            publications.to_string(bib_format='custombibtex'),
-            'gerunsrtwithlinks',
-            citations=publications.entries.keys(),
-            bib_format='bibtex',
-            bib_encoding=None,
-            output_backend='customhtml',
-            output_encoding='utf8'
-        )
+        result = render_to_html(publications, args)
     elif fmt == 'tex':
-        raise NotImplementedError()
+        result = render_to_tex(publications, args)
     elif fmt == 'pdf':
         raise NotImplementedError()
     else:
         raise ValueError('Unknown format \'%s\' given. Known formats are ' +
                          ','.join(["{}"] * len(known_fmts)), fmt, *known_fmts)
+    return result
+
+
+def list(args):
     outfile = args.out
-    if not outfile.endswith(fmt):
-        outfile += '.%s' % fmt
+    if not outfile.endswith(args.fmt):
+        outfile += '.%s' % args.fmt
+    result = render(args)
 
-    with open(outfile, mode='w', encoding='utf8') as f:
-        f.write(result)
-
-
-def render_to_latex(bibdata, template):
-    pass
+    write_output(result, outfile)
 
 
-def render_to_html(bibdata):
-    pass
+def render_to_html(publications, args):
+    from plugin_data import plugin_data
+    plugin_data['label_start'] = 0
+    plugin_data['write_html_wrapper'] = args.complete_html
+    if args.groupby:
+        plugin_data['groupby'] = args.groupby
+
+    return pybtex.format_from_string(
+        publications.to_string(bib_format='custombibtex'),
+        'gerunsrtwithlinks',
+        citations=publications.entries.keys(),
+        bib_format='bibtex',
+        bib_encoding=None,
+        output_backend='customhtml',
+        output_encoding='utf8'
+    )
+
+
+def render_to_tex(publications, args):
+    from plugin_data import plugin_data
+    plugin_data['label_start'] = 0
+    plugin_data['write_html_wrapper'] = args.complete_html
+    return pybtex.format_from_string(
+        publications.to_string(bib_format='custombibtex'),
+        'gerunsrtwithlinks',
+        citations=publications.entries.keys(),
+        bib_format='bibtex',
+        bib_encoding=None,
+        output_backend='customhtml',
+        output_encoding='utf8'
+    )
 
 
 def main():
@@ -509,8 +532,10 @@ def main():
                              help='Whether or not to produce valid HTML '
                              'or only the <dl> element to place inside another '
                              'document. Ignored in any format except html')
+    list_parser.add_argument('-g', '--groupby', required=False, type=str,
+                             help='Group resulting publications into sections.')
 
-    list_parser.set_defaults(func=render)
+    list_parser.set_defaults(func=list)
 
     args = parser.parse_args()
     if args.subparser_name:
