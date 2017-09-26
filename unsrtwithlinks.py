@@ -1,9 +1,9 @@
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import field, sentence, href, join, optional, tag
-from pybtex.style import FormattedEntry
+from pybtex.style import FormattedEntry, FormattedBibliography
 from pybtex.plugin import find_plugin
 from plugin_data import plugin_data
-
+from itertools import groupby
 
 class Style(UnsrtStyle):
     """Style for appending links to html output."""
@@ -11,10 +11,11 @@ class Style(UnsrtStyle):
     def __init__(self, label_style=None, name_style=None, sorting_style=None,
                  abbreviate_names=False, min_crossrefs=2, **kwargs):
 
-        if not label_style:
+        if not label_style and 'label_start' in plugin_data:
             # must be done before calling super()
             label_style = find_plugin('pybtex.style.labels', 'numberwithoffset')
         label_style.label_start = plugin_data['label_start']
+        sorting_style = 'custom_author_year_title'
 
         super().__init__(label_style=label_style, name_style=name_style,
                          sorting_style=sorting_style,
@@ -36,67 +37,106 @@ class Style(UnsrtStyle):
         :param entries: `BibliographyData` entries
         :type entries:  BibliographyData
         """
-        sorted_entries = self.sort(entries)
-        labels = self.format_labels(sorted_entries)
-        for label, entry in zip(labels, sorted_entries):
-            for persons in entry.persons.itervalues():
-                for person in persons:
-                    person.text = self.format_name(person,
-                                                   self.abbreviate_names)
+        if 'groupby' in plugin_data:
+            sorter = plugin_data['groupby']
 
-            f = getattr(self, "format_" + entry.type)
-            text = f(entry)
+            def group_sorter(e):
+                return e.fields[sorter] if sorter in e.fields else 'Misc'
 
-            bib = optional[
-                join['[',
-                     tag('tt')[
-                         href[
-                             field('publipy_biburl', raw=True),
-                             'bib'
+            # sort according to field value
+            sorted_entries = sorted(entries, key=group_sorter)
+
+            # we must make copies of the iterators, so they can be iterated over
+            # multiple times
+            groups = []
+            group_names = []
+            for k, g in groupby(sorted_entries, key=group_sorter):
+                groups.append(list(g))
+                group_names.append(k)
+
+            grouped_entries = dict((k, v) for k, v in zip(group_names, groups))
+
+        else:
+            grouped_entries = {'ALL': list(entries)}
+
+        print(sum(1 for k in grouped_entries for v in grouped_entries[k]))
+
+        for group_name, group in sorted(grouped_entries.items()):
+            sorted_entries = self.sort(group)
+            labels = list(self.format_labels(sorted_entries))
+            self.label_style.label_start += len(labels)
+            for label, entry in zip(labels, sorted_entries):
+                for persons in entry.persons.itervalues():
+                    for person in persons:
+                        person.text = self.format_name(person,
+                                                       self.abbreviate_names)
+
+                f = getattr(self, "format_" + entry.type)
+                text = f(entry)
+
+                bib = optional[
+                    join['[',
+                         tag('tt')[
+                             href[
+                                 field('publipy_biburl', raw=True),
+                                 'bib'
+                             ]
+                         ],
+                         ']'
                          ]
-                     ],
-                     ']'
-                     ]
-            ]
+                ]
 
-            pdf = optional[
-                join['[',
-                     tag('tt')[
-                         href[
-                             field('publipy_pdfurl', raw=True),
-                             'pdf'
+                pdf = optional[
+                    join['[',
+                         tag('tt')[
+                             href[
+                                 field('publipy_pdfurl', raw=True),
+                                 'pdf'
+                             ]
+                         ],
+                         ']'
                          ]
-                     ],
-                     ']'
-                     ]
-            ]
+                ]
 
-            abstract = optional[
-                join['[',
-                     tag('tt')[
-                         href[
-                             field('publipy_abstracturl', raw=True),
-                             'abstract'
+                abstract = optional[
+                    join['[',
+                         tag('tt')[
+                             href[
+                                 field('publipy_abstracturl', raw=True),
+                                 'abstract'
+                             ]
+                         ],
+                         ']'
                          ]
-                     ],
-                     ']'
-                     ]
-            ]
+                ]
 
-            www = join['[',
-                       tag('tt')[
-                           href[
-                               field('url_home', raw=True),
-                               'www'
+                www = join['[',
+                           tag('tt')[
+                               href[
+                                   field('url_home', raw=True),
+                                   'www'
+                               ]
+                           ],
+                           ']'
                            ]
-                       ],
-                       ']'
-                       ]
 
-            text += ' '  # make some space
-            if entry.fields['url_home']:
-                text += join(sep=' ')[bib, pdf, abstract, www].format_data(entry)
-            else:
-                text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
+                text += ' '  # make some space
+                if entry.fields['url_home']:
+                    text += join(sep=' ')[bib, pdf, abstract,
+                                          www].format_data(entry)
+                else:
+                    text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
 
-            yield FormattedEntry(entry.key, text, label)
+                yield group_name, FormattedEntry(entry.key, text, label)
+
+    def format_bibliography(self, bib_data, citations=None):
+        """
+        Override to use custom FormattedBibliography
+        """
+        if citations is None:
+            citations = bib_data.entries.keys()
+        citations = bib_data.add_extra_citations(citations, self.min_crossrefs)
+        entries = [bib_data.entries[key] for key in citations]
+        formatted_entries = self.format_entries(entries)
+        formatted_bibliography = FormattedBibliography(formatted_entries, style=self, preamble=bib_data.preamble)
+        return formatted_bibliography
