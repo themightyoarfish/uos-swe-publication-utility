@@ -5,6 +5,7 @@ from pybtex.plugin import find_plugin
 from plugin_data import plugin_data
 from itertools import groupby
 
+
 class Style(UnsrtStyle):
     """Style for appending links to html output."""
 
@@ -58,8 +59,6 @@ class Style(UnsrtStyle):
 
         else:
             grouped_entries = {'ALL': list(entries)}
-
-        print(sum(1 for k in grouped_entries for v in grouped_entries[k]))
 
         for group_name, group in sorted(grouped_entries.items()):
             sorted_entries = self.sort(group)
@@ -129,14 +128,3 @@ class Style(UnsrtStyle):
 
                 yield group_name, FormattedEntry(entry.key, text, label)
 
-    def format_bibliography(self, bib_data, citations=None):
-        """
-        Override to use custom FormattedBibliography
-        """
-        if citations is None:
-            citations = bib_data.entries.keys()
-        citations = bib_data.add_extra_citations(citations, self.min_crossrefs)
-        entries = [bib_data.entries[key] for key in citations]
-        formatted_entries = self.format_entries(entries)
-        formatted_bibliography = FormattedBibliography(formatted_entries, style=self, preamble=bib_data.preamble)
-        return formatted_bibliography
