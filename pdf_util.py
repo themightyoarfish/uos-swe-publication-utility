@@ -89,7 +89,6 @@ def pdf_for_pub(entry, pdf_folder):
             author_info = get_author_info(entry)
             title_info = get_title_info(entry)
             author_info_pdf = get_author_info(file)
-            import ipdb; ipdb.set_trace()
             confidence_title = search_for_string(file, title_info)
             confidence_author = SequenceMatcher(None, author_info_pdf.split(),
                                                 author_info.split(),
@@ -128,12 +127,12 @@ def search_for_string(pdf, text):
     # remove newlines and superfluous spaces
     pdf_text = re.sub('[\n\s]+', ' ', pdf_text).split()
     # title should occur in first fifth (hopefully)
-    pdf_text = pdf_text[:len(pdf_text)//5]
+    pdf_text = pdf_text[:len(pdf_text) // 5]
     best_score = 0
     best_match = None
     print("Searching for: %s" % text)
-    for start in range(0, len(pdf_text)-len(text)):
-        subsequence = pdf_text[start:start+len(text)]
+    for start in range(0, len(pdf_text) - len(text)):
+        subsequence = pdf_text[start:start + len(text)]
         if len(text_set.intersection(set(subsequence))) < 2:
             continue
         score = SequenceMatcher(None, subsequence, text, autojunk=False).ratio()
