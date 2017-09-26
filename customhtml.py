@@ -43,13 +43,10 @@ class Backend(HTMLBackend):
         else:
             pass
 
-    def write_to_file(self, formatted_entries, filename):
-        with pybtex.io.open_unicode(filename, "w", self.encoding) as stream:
-            self.write_to_stream(formatted_entries, stream)
-            if hasattr(stream, 'getvalue'):
-                return stream.getvalue()
 
     def write_to_stream(self, formatted_bibliography, stream):
+        """Will be called by write to file. We override to deal with the case
+        where the FormattedBibliography has groups."""
         self.output = stream.write
         self.formatted_bibliography = formatted_bibliography
 
