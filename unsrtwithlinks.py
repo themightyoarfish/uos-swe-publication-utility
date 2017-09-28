@@ -3,7 +3,7 @@ from pybtex.style.template import field, sentence, href, join, optional, tag
 from pybtex.style import FormattedEntry, FormattedBibliography
 from pybtex.plugin import find_plugin
 from plugin_data import plugin_data
-from itertools import groupby
+from publi import group_entries_by_key
 
 
 class Style(UnsrtStyle):
@@ -40,23 +40,7 @@ class Style(UnsrtStyle):
         """
         if 'groupby' in plugin_data:
             sorter = plugin_data['groupby']
-
-            def group_sorter(e):
-                return e.fields[sorter] if sorter in e.fields else 'Misc'
-
-            # sort according to field value
-            sorted_entries = sorted(entries, key=group_sorter)
-
-            # we must make copies of the iterators, so they can be iterated over
-            # multiple times
-            groups = []
-            group_names = []
-            for k, g in groupby(sorted_entries, key=group_sorter):
-                groups.append(list(g))
-                group_names.append(k)
-
-            grouped_entries = dict((k, v) for k, v in zip(group_names, groups))
-
+            grouped_entries = group_entries_by_key(entries, sorter)
         else:
             grouped_entries = {'ALL': list(entries)}
 
