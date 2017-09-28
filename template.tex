@@ -1,0 +1,26 @@
+\documentclass{scrartcl}
+\usepackage{bibunits}
+\usepackage{lmodern, hyperref, array, amsmath, amssymb, microtype, IEEEtrantools}
+\usepackage[utf8x]{inputenc}
+
+\title{Publications by the Software Engeneering group, Osnabrück University}
+
+\begin{document}
+((* if grouped *))
+((* for name, group in groups *))
+\section{(((name)))}
+\begin{bibunit}[unsrt]
+((* for key, item in group *))
+\nocite{(((key)))}
+((* endfor *))
+\putbib[(((bibfile)))]
+\end{bibunit}
+((* endfor *))
+((* else *))
+((* for key, item in items *))
+\nocite{(((key)))}
+((* endfor *))
+\bibliography{(((bibfile)))}
+\bibliographystyle{unsrt}
+((* endif *))
+\end{document}
