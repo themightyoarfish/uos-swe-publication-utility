@@ -25,6 +25,7 @@ private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
                       'url_home', 'publipy_abstracturl'])
 stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
+
 def group_entries_by_key(entries, sorter):
     def group_sorter(e):
         if isinstance(e, tuple):
@@ -489,16 +490,17 @@ def render_to_tex(publications, args):
     plugin_data['label_start'] = 0
     from jinja2 import Environment, FileSystemLoader
     env = Environment(loader=FileSystemLoader('.'),
-            block_start_string = '((*',
-            block_end_string = '*))',
-            variable_start_string = '(((',
-            variable_end_string = ')))',
-            comment_start_string = '((=',
-            comment_end_string = '=))',
-            )
+                      block_start_string='((*',
+                      block_end_string='*))',
+                      variable_start_string='(((',
+                      variable_end_string=')))',
+                      comment_start_string='((=',
+                      comment_end_string='=))',
+                      )
     template = env.get_template('template.tex')
     if args.groupby:
-        entries = group_entries_by_key(publications.entries.items(), args.groupby)
+        entries = group_entries_by_key(publications.entries.items(),
+                                       args.groupby)
         if args.bibfile.endswith('.bib'):
             args.bibfile = args.bibfile[:-4]
         latex = template.render({
@@ -549,31 +551,31 @@ def main():
     ############################################################################
     list_parser = subparsers.add_parser('list', help='List entries')
     list_parser.add_argument('-f', '--format', required=False, type=str,
-            default='bib', help='Format to output', dest='fmt',
-            choices=['bib', 'html', 'tex', 'pdf'])
+                             default='bib', help='Format to output', dest='fmt',
+                             choices=['bib', 'html', 'tex', 'pdf'])
     list_parser.add_argument('-o', '--out', required=True, type=str,
-            default='bibliography', help='File to output to',
-            dest='out')
+                             default='bibliography', help='File to output to',
+                             dest='out')
     list_parser.add_argument('-e', '--expr', required=False, type=str,
-            help='Filter with python expression. '
-            'A variable \'entry\' denotes the '
-            'entry to consider')
+                             help='Filter with python expression. '
+                             'A variable \'entry\' denotes the '
+                             'entry to consider')
     list_parser.add_argument('-p', '--person', required=False, type=str,
-            help='Print only publications this person is '
-            'involved in (be it author or editor)')
+                             help='Print only publications this person is '
+                             'involved in (be it author or editor)')
     list_parser.add_argument('-t', '--mytype', required=False, type=str,
-            help='Print only publications that have '
-            'this mytype')
+                             help='Print only publications that have '
+                             'this mytype')
     list_parser.add_argument('-c', '--complete_html', required=False,
-            action='store_true', dest='complete_html',
-            help='Whether or not to produce valid HTML '
-            'or only the <dl> element to place inside another '
-            'document. Ignored in any format except html')
+                             action='store_true', dest='complete_html',
+                             help='Whether or not to produce valid HTML '
+                             'or only the <dl> element to place inside another '
+                             'document. Ignored in any format except html')
     list_parser.add_argument('-g', '--groupby', required=False, type=str,
-            help='Group resulting publications into sections.')
+                             help='Group resulting publications into sections.')
     list_parser.add_argument('-b', '--bibfile', required=False, type=str,
-            default='all.bib', help='Name of the file to reference in tex. '
-            'Must be generated separately')
+                             default='all.bib', help='Name of the file to '
+                             'reference in tex. Must be generated separately')
 
     list_parser.set_defaults(func=list_entries)
 
