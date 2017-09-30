@@ -497,7 +497,7 @@ def render_to_tex(publications, args):
                       comment_start_string='((=',
                       comment_end_string='=))',
                       )
-    template = env.get_template('template.tex')
+    template = env.get_template(args.template)
     if args.groupby:
         entries = group_entries_by_key(publications.entries.items(),
                                        args.groupby)
@@ -563,7 +563,7 @@ def main():
     list_parser.add_argument('-p', '--person', required=False, type=str,
                              help='Print only publications this person is '
                              'involved in (be it author or editor)')
-    list_parser.add_argument('-t', '--mytype', required=False, type=str,
+    list_parser.add_argument('-m', '--mytype', required=False, type=str,
                              help='Print only publications that have '
                              'this mytype')
     list_parser.add_argument('-c', '--complete_html', required=False,
@@ -576,6 +576,9 @@ def main():
     list_parser.add_argument('-b', '--bibfile', required=False, type=str,
                              default='all.bib', help='Name of the file to '
                              'reference in tex. Must be generated separately')
+    list_parser.add_argument('-t', '--template', required=False, type=str,
+                             default='templates/template.tex',
+                             help='Name of the jinja2 LaTeX template')
 
     list_parser.set_defaults(func=list_entries)
 
