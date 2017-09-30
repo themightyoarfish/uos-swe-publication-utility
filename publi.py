@@ -2,8 +2,10 @@
 
 """A program to build, update, export publications
 
-..moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
+.. moduleauthor:: Rasmus Diederichsen <rdiederichse@uos.de>
+
 """
+
 import argparse
 import shutil
 import copy
@@ -27,6 +29,20 @@ stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
 def group_entries_by_key(entries, sorter):
+    """
+    .. py:function:: group_entries_by_key(entries, sorter)
+
+    Sort set of entries into groups depending on the value of `sorter`.
+    Returns :py:class:`dict` where keys are the different values of the
+    `sorter` field occurring across the set of entries.
+
+    :param list entries: Iterable of :py:class:`pybtex.database.Entry`\
+    objects
+    :param str sorter: Name of the field to sort on
+    :return: Dictionary mapping field value to list of entries with that\
+    value
+    :rtype: dict
+    """
     def group_sorter(e):
         if isinstance(e, tuple):
             e = e[1]  # if tuple, ignore key
@@ -48,10 +64,32 @@ def group_entries_by_key(entries, sorter):
 
 
 def make_plain(text):
+    """
+    .. py:function:: make_plain(text)
+
+    Detexify and asciify text
+
+    :param str text: Text to make plain
+    :returns: Text with all LaTeX sequences rendered to text and unicode\
+        characters replaced
+    :rtype: str
+    """
     return unidecode(LatexNodes2Text().latex_to_text(text))
 
 
 def generate_key_swe(entry):
+    """
+    .. py:function:: generate_key_swe(entry)
+
+    Create a new bibtex key for the given entry in the format desired by the
+    group leader. The format is ``<first author>:<first title word>:yy``.
+    Stop words (non-significant ones such as articles are ignored).
+    Missing fields are empty.
+
+    :param pybtex.database.Entry entry: Bibliography item to key
+    :returns: The new key
+    :rtype: str
+    """
     if 'author' in entry.persons:
         person = '-'.join(entry.persons['author'][0].last_names)
     elif 'editor' in entry.persons:
@@ -75,9 +113,17 @@ def generate_key_swe(entry):
 
 
 def generate_key_bibtool(entry):
-    """ Generate a key like bibtool would create with the following options
-            key.base=lower
-            key.format=short
+    """
+    .. py::function generate_key_bibtool(entry)
+
+    Generate a key like bibtool would create with the following options
+
+    * ``key.base=lower``
+    * ``key.format=short``
+
+    :param pybtex.database.Entry entry: Entry to key
+    :returns: The new key
+    :rtype: str
     """
     if 'author' in entry.persons:
         authors = entry.persons['author']
@@ -96,6 +142,20 @@ def generate_key_bibtool(entry):
 
 
 def generate_suffix(key, keyset, current_suffix=''):
+    """
+    .. py:function:: generate_suffix(key, keyset[, current_suffix])
+
+    Generate a key suffix for disambiguation. The resulting key will be\
+        unique with respect to `keyset`. Works by appending successively\
+        more alphanumeric\
+        characters (``key -> key.a -> key.b -> ... -> key.ab``)
+
+    :param str key: Original key
+    :param set keyset: Set of keys over which to disambiguate
+    :param str current_suffix: Accumulator argument for recursion
+    :returns: The new key
+    :rtype: str
+    """
     for suffix in range(97, 123):
         if key + '.' + current_suffix + chr(suffix) not in keyset:
             return current_suffix + chr(suffix)
@@ -103,30 +163,43 @@ def generate_suffix(key, keyset, current_suffix=''):
 
 
 def disambiguate(key, keyset):
-    """Disambiguate key over set of keys by successively appending more
-    alphanumeric numbers."""
+    """
+    .. py:function:: disambiguate(key, keyset)
+
+    Disambiguate key over set of keys by successively appending more
+    alphanumeric numbers.
+
+    See :py:func:`generate_suffix`
+
+    """
     if key not in keyset:
         return key
     return key + ':' + generate_suffix(key, keyset)
 
 
 class PublicationDatabase(object):
-    """Class to hold information about publication lists"""
+    """
+    .. py:class:: PublicationDatabase([database_file[, pdf_dir[, prefix]]])
+
+    Class to hold information about publication lists
+    """
 
     @classmethod
     def default_comparator(cls, item1, item2):
-        """Default comparator for bibliograpyh items.This function will first
-        compare the keys and then check whether both entries have a title field
-        and if so, check whether their values are
-        equal.
+        """
+        .. py:function:: default_comparator(cls, item1, item2)
 
-        :param cls: Class object
-        :type cls: class
-        :param item1: First bibliography item
-        :type item1: tuple
-        :param item2: Second bibliography item
-        :type item2: tuple
-        :returns: bool -- whether the two are duplicates or not
+        Default comparator for bibliograpyh items.This function will first
+        compare the keys and then check whether both entries have a title
+        field and if so, check whether their values are similar according to
+        a ratio computed with :py:class:`difflib.SequenceMatcher`. Equality
+        is assumed if `r>=0.8`
+
+        :param class cls: Class object
+        :param tuple item1: First bibliography item
+        :param tuple item2: Second bibliography item
+        :returns: Whether the two are duplicates or not
+        :rtype: bool
         """
         key1, entry1 = item1
         key2, entry2 = item2
@@ -152,14 +225,17 @@ class PublicationDatabase(object):
             return similarity > 0.8
 
     def __init__(self, database_file=None, pdf_dir=None, prefix=None):
-        """Create a database by reading all the .bib files listed in a file.
+        """
 
-        :param database_file: Json file listing members and associated file
-        locations of bibfiles
-        :type databses_file: str
-        :param prefix: Folder prefix for saving/loading individual bib files and
-            pdfs
-        :type prefix: str
+        .. py:method:: __init__([database_file[, pdf_dir[, prefix]]])
+
+        Create a database by reading all the bibliography data in a BibTeX
+        file.
+
+        :param str database_file: Json file listing members and\
+           associated file locations of bibfiles
+        :param str prefix: Folder prefix for saving/loading individual\
+            bib files and pdfs
         """
         if database_file:
             self.database_file = database_file
@@ -170,10 +246,15 @@ class PublicationDatabase(object):
         self.delete(key)
 
     def delete(self, key):
-        """Remove item from bilbiography
+        """
+        .. py:method:: delete(key)
 
-        :param key: Bibliography key to delete
-        :type key: str
+        Remove item from bilbiography. This operation is linear, since the\
+        underlying :py:class:`pybtex.utils.OrderedCaseInsensitiveDict` does\
+        not support deletion. This will also remove the bibfile associated\
+        with `key`.
+
+        :param str key: Bibliography key to delete
         """
         for k in self.publications.entries.keys():
             if k == key:
@@ -192,7 +273,17 @@ class PublicationDatabase(object):
         #     pdffile.unlink()
 
     def save(self):
-        """Serialize self to pickled file named 'db.pckl'"""
+        """
+        .. py:method:: save
+
+         Serialize self to pickled file named **db.pckl** for caching and
+         update the :py:attr:`database_file` with all entries. Also,
+         directories **abstract**, **pdf** and **bib** are created under
+         :py:attr:`prefix` which are filled with one file per key each –
+         one for a BibTeX file with the single entry, one text file for
+         the abstract (if present in the entry) and one pdf file (if a
+         pdf named like the entry's key was found in :py:attr:`pdf_dir`)
+        """
         with open('db.pckl', mode='wb') as f:
             dump(self.publications, f)
 
@@ -225,17 +316,27 @@ class PublicationDatabase(object):
                         f.write('\n'.join(textwrap.wrap(text, width=80)))
 
     def load(self):
-        """Deserialize self from pickled file named 'db.pckl'."""
+        """
+        .. py:method:: load
+
+        Deserialize self from pickled file named **db.pckl**.
+        """
         with open('db.pckl', mode='rb') as f:
             self.publications = load(f)
 
     def populate(self, database_file, pdf_dir):
-        """Collect all bibdata from all files into one big-ass database.
-
-        :param database_file: File listing members and locations of bibfiles
-        :type database_file: str
         """
+        .. py:method:: populate(database_file, pdf_dir)
 
+        Collect all bibdata from all files into one big-ass database (self),
+        rekeying the entries.  This method will also set *publipy_biburl*,
+        *publipy_abstracturl*, and *publipy_pdfurl* attributes on the entries.
+        Pdf files are copied to :py:attr:`pdf_dir` **/pdf**.
+
+        :param str database_file: File containing all bibliography data
+        :param str pdf_dir: Directory filled with pdfs named by their\
+            bibliography keys
+        """
         self.publications = BibliographyData()
         publications = read_bibfile(database_file).entries
 
@@ -264,9 +365,15 @@ class PublicationDatabase(object):
             self.add_entry(key, item)
 
     def find_duplicates(self, comparator=None):
-        """Find suspected duplicates.
-        :param comparator: binary function to determine whether two bib items
-        (of type (:class: `str`, :class: `pybtex.Entry`))
+        """
+        .. py:method:: find_duplicates([comparator])
+
+        Find suspected duplicates.
+
+        :param comparator: binary function to determine whether two bib items\
+        (of type (:py:class:`str`, :py:class:`pybtex.database.Entry`)) are\
+        identical
+        :type comparator: function (see :py:func:`default_comparator`)
         """
         if not comparator:
             comparator = PublicationDatabase.default_comparator
@@ -283,6 +390,16 @@ class PublicationDatabase(object):
         return suspects
 
     def add_entry(self, key, entry):
+        """
+        .. py:method:: add_entry(key, entry)
+
+        Add an entry to the database.
+
+        :param str key: Key of the new entry. Will be disambiguated before\
+            insertion
+        :param entry: Entry to add
+        :type entry: :py:class:`pybtex.database.Entry`
+        """
         if not isinstance(entry, pybtex.database.Entry):
             raise ValueError('Expected type pybtex.database.Entry, got %' %
                              type(entry))
@@ -296,6 +413,14 @@ class PublicationDatabase(object):
         return self.publications.entries[key]
 
     def add_bibdata(self, entries):
+        """
+        .. py::method:: add_bibdata(entries)
+
+        Add several entries to the database.
+        :param entries: Entries to add
+        :type entries: str or :py:class:`pybtex.database.BibliographyData`. If\
+            a string is passed it will be treated as the name of a BibTeX file.
+        """
         if isinstance(entries, str):
             bibdata = pybtex.database.parse_string(entries, bib_format='bibtex')
         else:
@@ -307,12 +432,33 @@ class PublicationDatabase(object):
             self.add_entry(key, v)
 
     def iter_entries(self, predicate=None):
+        """
+        .. py:method:: iter_entries([predicate])
+
+        Create and iterator for filtering entries.
+
+        :param predicate: Filter function to use. If ``None``, all entries will\
+            be included.
+        :param predicate: function
+        """
         predicate = predicate or (lambda x: True)
         for k, entry in self.publications.entries.items():
             if predicate(entry):
                 yield (k, entry)
 
     def publications_for_year(self, min_year, max_year):
+        """
+        .. py:method:: publications_for_year(min_year, max_year)
+
+        Get all publications between two years (inclusive)
+
+        :param min_year: Minimum allowed year
+        :type min_year: str or int
+        :param max_year: Maximum allowed year
+        :type max_year: str or int
+        :return: Iterator
+        :raises: ValueError if ``min_year >= max_year``
+        """
         if max_year <= min_year:
             raise ValueError("min_year must be smaller than max_year")
 
@@ -325,26 +471,42 @@ class PublicationDatabase(object):
         return self.iter_entries(predicate=f)
 
     def publications_for_type(self, type):
+        """
+        .. py:method:: publications_for_type(type)
+
+        Get all publications of the given kind (book, article, inproceedings..).
+
+        :param str type: Desired type
+        :return: Iterator
+        """
         def f(entry):
             return entry.type == type
         return self.iter_entries(predicate=f)
 
-    def publications_for_member(self, member, fmt='bib'):
+    def publications_for_member(self, member):
+        """
+        .. py:method:: publications_for_member(member)
+
+        Get all publications the given person is involved in.
+        **Currently not implemented**
+
+        :param member: Relevant person
+        :type member: str or :py:class:`pybtex.database.Person`
+        :return: Iterator
+        """
         raise ValueError('Not implemented')
-        # if member not in self.publications:
-        #     raise ValueError("Unknown group member.")
-        # return self.publications['member']
 
 
 def build(args):
-    """Build a :class: `PublicationDatabase` from the arguments passed.
+    """
+    .. py:function:: build(args)
 
-    :param args: :class: `Namespace` object obtained via :class:
-        argparse.ArgumentParser's :link: `argparse.ArgumentParser.parse_args`
-        method.
-    :type args: argparse.Namespace
-    :returns: database with all publications
-    :rtype: PublicationDatabase
+    Build and save a :py:class:`PublicationDatabase` from the arguments passed.
+
+    :param args: :py:class:`argparse.Namespace` object obtained via\
+        :py:class:`argparse.ArgumentParser`'s\
+        :py:meth:`argparse.ArgumentParser.parse_args` method.
+    :type args: :py:class:`argparse.Namespace`
 
     """
     pubdata = PublicationDatabase(args.database, args.pdf_loc)
@@ -362,6 +524,16 @@ def build(args):
 
 
 def add(args):
+    """
+    .. py:function:: add(args)
+
+    Add item(s) to the database. Uses the ``entries`` field from the arguments.
+
+    :param args: Command line arguments obtained via\
+        :py:class:`argparse.ArgumentParser`'s\
+        :py:meth:`argparse.ArgumentParser.parse_args` method.
+    :type args: :py:class:`argparse.Namespace`
+    """
     pubdata = PublicationDatabase()
     pubdata.load()
     pubdata.add_bibdata(args.entries)
@@ -369,18 +541,37 @@ def add(args):
 
 
 def read_bibfile(filename):
-    """Read a bibliography file and add a key field"""
+    """
+    .. py:function:: read_bibfile(filename)
+
+    Parse :py:class:`pybtex.database.BibliographyData` from BibTeX file.
+
+    :param str filename: Name of the BibTeX file
+    :returns: The parsed data
+    :rtype: :py:class:`pybtex.database.BibliographyData`
+    """
     with open(filename) as f:
         db = pybtex.database.parse_file(f, 'bibtex')
         return db
 
 
 def check_validity(entry):
+    """
+    .. py:function:: check_validity(entry)
+
+    Currently unimplemented.
+    """
     # TODO: Check if entry is valid by trying to render it
     pass
 
 
 def print_all_authors():
+    """
+    .. py:function:: print_all_authors
+
+    Print all persons found in the database. Can be authors or editors (in\
+    spite of the name)
+    """
     db = PublicationDatabase()
     db.load()
     entries = db.publications.entries.values()
@@ -398,6 +589,18 @@ def print_all_authors():
 
 
 def filtered_entries(database, args):
+    """
+    .. py:function:: filtered_entries(database, args)
+
+    Get a :py:class:`PublicationDatabase` containing only selected entries.
+    Will read out the ``person`` and ``mytype`` filters from the arguments.
+    Only entries meeting all criteria are selected.
+
+    :param database: Database of publications
+    :type database: :py:class:`PublicationDatabase`
+    :param args: Command line arguments
+    :type args: :py:class:`argparse.Namespace`
+    """
     BibData = BibliographyData  # shorter
 
     # slap onto this all constraints
@@ -432,14 +635,34 @@ def filtered_entries(database, args):
 
 
 def write_output(content, fname):
+    """
+    .. py:function:: write_output(content, fname)
+
+    Convenience for writing string to utf8-encoded file.
+
+    :param str content: Text to write
+    :param str fname: File to write to
+    """
     with open(fname, mode='w', encoding='utf8') as f:
         f.write(content)
 
 
 def render(args):
+    """
+    .. py:functions:: render(args)
+
+    Render publication database into various formats. Supported are ``bib``,
+    ``html``, ``tex`` and ``pdf`` (currently unimplemented)
+
+    :param args: Command line arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: Rendered database
+    :rtype: result
+    :raises: ValueError if unknown format passed
+    """
     db = PublicationDatabase()
     db.load()
-    known_fmts = ['bib', 'html', 'text', 'pdf']
+    known_fmts = ['bib', 'html', 'tex', 'pdf']
 
     publications = filtered_entries(db, args)
 
@@ -459,6 +682,14 @@ def render(args):
 
 
 def list_entries(args):
+    """
+    .. py:functions:: list_entries(args)
+
+    Render database to format and write to file. See :py:func:`render`
+
+    :param args: Command line arguments
+    :type args: :py:class:`argparse.Namespace`
+    """
     outfile = args.out
     if not outfile.endswith(args.fmt):
         outfile += '.%s' % args.fmt
@@ -468,6 +699,18 @@ def list_entries(args):
 
 
 def render_to_html(publications, args):
+    """
+    .. py:function:: render_to_html(publications, args)
+
+    Render publication database to html. Optionally complete or as embeddable
+    fragment.
+
+    :param publications: Publications to render
+    :type publications: :py:class:`PublicationDatabase`
+    :param args: Command line arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: Rendered database
+    """
     from plugin_data import plugin_data
     plugin_data['label_start'] = 0
     plugin_data['write_html_wrapper'] = args.complete_html
@@ -486,6 +729,18 @@ def render_to_html(publications, args):
 
 
 def render_to_tex(publications, args):
+    """
+    .. py:function:: render_to_tex(publications, args)
+
+    Render publication database to latex. Optionally complete or as embeddable
+    fragment.
+
+    :param publications: Publications to render
+    :type publications: :py:class:`PublicationDatabase`
+    :param args: Command line arguments
+    :type args: :py:class:`argparse.Namespace`
+    :return: Rendered database
+    """
     from plugin_data import plugin_data
     plugin_data['label_start'] = 0
     from jinja2 import Environment, FileSystemLoader
@@ -518,7 +773,13 @@ def render_to_tex(publications, args):
 
 
 def main():
-    """Process user commands."""
+    """
+    .. py:func:: main
+
+    Process user commands. The program has several subcommands. Run with
+    `--help` for full details.
+
+    """
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='subparser_name')
 
