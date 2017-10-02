@@ -9,4 +9,3 @@ python
    plugin_data
    publi
    setup
-   unicodeit
