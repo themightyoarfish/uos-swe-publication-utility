@@ -83,7 +83,7 @@ def generate_key_swe(entry):
 
     Create a new bibtex key for the given entry in the format desired by the
     group leader. The format is ``<first author>:<first title word>:yy``.
-    Stop words (non-significant ones such as articles are ignored).
+    Stop words (non-significant ones such as articles) are ignored.
     Missing fields are empty.
 
     :param pybtex.database.Entry entry: Bibliography item to key
@@ -417,6 +417,7 @@ class PublicationDatabase(object):
         .. py::method:: add_bibdata(entries)
 
         Add several entries to the database.
+
         :param entries: Entries to add
         :type entries: str or :py:class:`pybtex.database.BibliographyData`. If\
             a string is passed it will be treated as the name of a BibTeX file.
@@ -593,8 +594,8 @@ def filtered_entries(database, args):
     .. py:function:: filtered_entries(database, args)
 
     Get a :py:class:`PublicationDatabase` containing only selected entries.
-    Will read out the ``person`` and ``mytype`` filters from the arguments.
-    Only entries meeting all criteria are selected.
+    Will read out the ``person``, ``expr``, and ``mytype`` filters from the
+    arguments.  Only entries meeting all criteria are selected.
 
     :param database: Database of publications
     :type database: :py:class:`PublicationDatabase`
@@ -649,7 +650,7 @@ def write_output(content, fname):
 
 def render(args):
     """
-    .. py:functions:: render(args)
+    .. py:function:: render(args)
 
     Render publication database into various formats. Supported are ``bib``,
     ``html``, ``tex`` and ``pdf`` (currently unimplemented)
@@ -683,7 +684,7 @@ def render(args):
 
 def list_entries(args):
     """
-    .. py:functions:: list_entries(args)
+    .. py:function:: list_entries(args)
 
     Render database to format and write to file. See :py:func:`render`
 
@@ -774,7 +775,7 @@ def render_to_tex(publications, args):
 
 def main():
     """
-    .. py:func:: main
+    .. py:function:: main
 
     Process user commands. The program has several subcommands. Run with
     `--help` for full details.
