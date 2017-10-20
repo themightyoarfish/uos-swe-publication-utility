@@ -2,7 +2,7 @@ import locale
 import datetime
 import pybtex
 
-from unsrtwithlinks import Style as UnsrtStyle
+from .unsrtwithlinks import Style as UnsrtStyle
 from pybtex.style.template import (field, sentence, names, join, words,
                                    optional, together, optional_field, first_of)
 from pybtex.style.formatting.unsrt import dashify

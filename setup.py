@@ -8,8 +8,7 @@ setup(name='Pybtex HTML rendering extensions',
       py_modules=['unsrtwithlinks'],
       entry_points={
           'pybtex.style.formatting': ['unsrtwithlinks = formatting.unsrtwithlinks:Style',
-                                      'gerunsrtwithlinks =\
-                                      formatting.gerunsrtwithlinks:Style'
+                                      'gerunsrtwithlinks = formatting.gerunsrtwithlinks:Style'
                                       ],
           'pybtex.backends': 'customhtml = backends.customhtml:Backend',
           'pybtex.style.labels': 'numberwithoffset = labels.numberwithoffset:LabelStyle',
