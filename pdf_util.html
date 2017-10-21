@@ -1,0 +1,120 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pdf_util module &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head>
+  <body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>pdf_util module</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-pdf_util">
+<span id="pdf-util-module"></span><h1>pdf_util module<a class="headerlink" href="#module-pdf_util" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="pdf_util.get_author_info">
+<code class="descclassname">pdf_util.</code><code class="descname">get_author_info</code><span class="sig-paren">(</span><em>entry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pdf_util.html#get_author_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pdf_util.get_author_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to extract some form of author string from a bibitem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Entry:</th><td class="field-body">BibliographyData</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str – String with author info or None, if nothing found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pdf_util.get_title_info">
+<code class="descclassname">pdf_util.</code><code class="descname">get_title_info</code><span class="sig-paren">(</span><em>entry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pdf_util.html#get_title_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pdf_util.get_title_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to guess title information from a publication.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pdf_util.pdf_for_pub">
+<code class="descclassname">pdf_util.</code><code class="descname">pdf_for_pub</code><span class="sig-paren">(</span><em>entry</em>, <em>pdf_folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pdf_util.html#pdf_for_pub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pdf_util.pdf_for_pub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to guess which pdf file might belong to a given bibliography entry.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Entry:</th><td class="field-body">BibliographyData object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Pdf_folder:</th><td class="field-body">str denoting folder location</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pdf_util.search_for_string">
+<code class="descclassname">pdf_util.</code><code class="descname">search_for_string</code><span class="sig-paren">(</span><em>pdf</em>, <em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pdf_util.html#search_for_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pdf_util.search_for_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan a pdf file for a string and return best match + score.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Pdf:</th><td class="field-body">PyPDF2.PdfFileReader – file containing the pdf</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Text:</th><td class="field-body">str – String to search for</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">TODO</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Rasmus Diederichsen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

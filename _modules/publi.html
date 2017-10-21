@@ -1,0 +1,916 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>publi &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head>
+  <body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>publi</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for publi</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env ipython3 --</span>
+
+<span class="sd">&quot;&quot;&quot;A program to build, update, export publications</span>
+
+<span class="sd">.. moduleauthor:: Rasmus Diederichsen &lt;rdiederichse@uos.de&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">filters</span> <span class="k">import</span> <span class="n">get_conjunction_filter</span><span class="p">,</span> <span class="n">get_person_filter</span><span class="p">,</span> <span class="n">get_mytype_filter</span>
+<span class="kn">from</span> <span class="nn">pickle</span> <span class="k">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">difflib</span> <span class="k">import</span> <span class="n">SequenceMatcher</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">pybtex.database</span> <span class="k">import</span> <span class="n">BibliographyData</span><span class="p">,</span> <span class="n">Entry</span>
+<span class="kn">from</span> <span class="nn">pylatexenc.latex2text</span> <span class="k">import</span> <span class="n">LatexNodes2Text</span>
+<span class="kn">import</span> <span class="nn">pybtex.database</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">unidecode</span> <span class="k">import</span> <span class="n">unidecode</span>
+<span class="kn">from</span> <span class="nn">re</span> <span class="k">import</span> <span class="n">split</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span>
+
+<span class="n">private_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;publipy_pdfurl&#39;</span><span class="p">,</span> <span class="s1">&#39;publipy_biburl&#39;</span><span class="p">,</span> <span class="s1">&#39;mytype&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;url_home&#39;</span><span class="p">,</span> <span class="s1">&#39;publipy_abstracturl&#39;</span><span class="p">])</span>
+<span class="n">stopwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;der&#39;</span><span class="p">,</span> <span class="s1">&#39;die&#39;</span><span class="p">,</span> <span class="s1">&#39;das&#39;</span><span class="p">,</span> <span class="s1">&#39;ein&#39;</span><span class="p">,</span> <span class="s1">&#39;eine&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="group_entries_by_key"><a class="viewcode-back" href="../publi.html#publi.group_entries_by_key">[docs]</a><span class="k">def</span> <span class="nf">group_entries_by_key</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">sorter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: group_entries_by_key(entries, sorter)</span>
+
+<span class="sd">    Sort set of entries into groups depending on the value of `sorter`.</span>
+<span class="sd">    Returns :py:class:`dict` where keys are the different values of the</span>
+<span class="sd">    `sorter` field occurring across the set of entries.</span>
+
+<span class="sd">    :param list entries: Iterable of :py:class:`pybtex.database.Entry`\</span>
+<span class="sd">    objects</span>
+<span class="sd">    :param str sorter: Name of the field to sort on</span>
+<span class="sd">    :return: Dictionary mapping field value to list of entries with that\</span>
+<span class="sd">    value</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">group_sorter</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># if tuple, ignore key</span>
+        <span class="k">return</span> <span class="n">e</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">sorter</span><span class="p">]</span> <span class="k">if</span> <span class="n">sorter</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">fields</span> <span class="k">else</span> <span class="s1">&#39;n/a&#39;</span>
+
+    <span class="c1"># sort according to field value</span>
+    <span class="n">sorted_entries</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">group_sorter</span><span class="p">)</span>
+
+    <span class="c1"># we must make copies of the iterators, so they can be iterated over</span>
+    <span class="c1"># multiple times</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">group_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">sorted_entries</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">group_sorter</span><span class="p">):</span>
+        <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
+        <span class="n">group_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="n">grouped_entries</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">group_names</span><span class="p">,</span> <span class="n">groups</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">grouped_entries</span></div>
+
+
+<div class="viewcode-block" id="make_plain"><a class="viewcode-back" href="../publi.html#publi.make_plain">[docs]</a><span class="k">def</span> <span class="nf">make_plain</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: make_plain(text)</span>
+
+<span class="sd">    Detexify and asciify text</span>
+
+<span class="sd">    :param str text: Text to make plain</span>
+<span class="sd">    :returns: Text with all LaTeX sequences rendered to text and unicode\</span>
+<span class="sd">        characters replaced</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">unidecode</span><span class="p">(</span><span class="n">LatexNodes2Text</span><span class="p">()</span><span class="o">.</span><span class="n">latex_to_text</span><span class="p">(</span><span class="n">text</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="generate_key_swe"><a class="viewcode-back" href="../publi.html#publi.generate_key_swe">[docs]</a><span class="k">def</span> <span class="nf">generate_key_swe</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: generate_key_swe(entry)</span>
+
+<span class="sd">    Create a new bibtex key for the given entry in the format desired by the</span>
+<span class="sd">    group leader. The format is ``&lt;first author&gt;:&lt;first title word&gt;:yy``.</span>
+<span class="sd">    Stop words (non-significant ones such as articles) are ignored.</span>
+<span class="sd">    Missing fields are empty.</span>
+
+<span class="sd">    :param pybtex.database.Entry entry: Bibliography item to key</span>
+<span class="sd">    :returns: The new key</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;author&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">:</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">[</span><span class="s1">&#39;author&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">last_names</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;editor&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">:</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">[</span><span class="s1">&#39;editor&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">last_names</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">title_field</span> <span class="o">=</span> <span class="s1">&#39;title&#39;</span> <span class="k">if</span> <span class="s1">&#39;title&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span> <span class="k">else</span> <span class="s1">&#39;booktitle&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">title_word</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">make_plain</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+                          <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[\s:.,]&#39;</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">title_field</span><span class="p">])</span>
+                          <span class="k">if</span> <span class="n">make_plain</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span>
+                          <span class="ow">and</span> <span class="n">w</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="n">title_word</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="n">year</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="k">if</span> <span class="s1">&#39;year&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="n">person</span> <span class="o">=</span> <span class="n">make_plain</span><span class="p">(</span><span class="n">person</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">title_word</span> <span class="o">=</span> <span class="n">title_word</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">return</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">person</span><span class="p">,</span> <span class="n">title_word</span><span class="p">,</span> <span class="n">year</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="generate_key_bibtool"><a class="viewcode-back" href="../publi.html#publi.generate_key_bibtool">[docs]</a><span class="k">def</span> <span class="nf">generate_key_bibtool</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py::function generate_key_bibtool(entry)</span>
+
+<span class="sd">    Generate a key like bibtool would create with the following options</span>
+
+<span class="sd">    * ``key.base=lower``</span>
+<span class="sd">    * ``key.format=short``</span>
+
+<span class="sd">    :param pybtex.database.Entry entry: Entry to key</span>
+<span class="sd">    :returns: The new key</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;author&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">:</span>
+        <span class="n">authors</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">[</span><span class="s1">&#39;author&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="s1">&#39;editor&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">:</span>
+        <span class="n">authors</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="p">[</span><span class="s1">&#39;editor&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No author or editor present&#39;</span><span class="p">)</span>
+    <span class="n">persons</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">last_names</span><span class="p">),</span> <span class="n">authors</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s1">&#39;title&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="s1">&#39;booktitle&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;booktitle&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No title or booktitle present&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">persons</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">title</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="generate_suffix"><a class="viewcode-back" href="../publi.html#publi.generate_suffix">[docs]</a><span class="k">def</span> <span class="nf">generate_suffix</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">keyset</span><span class="p">,</span> <span class="n">current_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: generate_suffix(key, keyset[, current_suffix])</span>
+
+<span class="sd">    Generate a key suffix for disambiguation. The resulting key will be\</span>
+<span class="sd">        unique with respect to `keyset`. Works by appending successively\</span>
+<span class="sd">        more alphanumeric\</span>
+<span class="sd">        characters (``key -&gt; key.a -&gt; key.b -&gt; ... -&gt; key.ab``)</span>
+
+<span class="sd">    :param str key: Original key</span>
+<span class="sd">    :param set keyset: Set of keys over which to disambiguate</span>
+<span class="sd">    :param str current_suffix: Accumulator argument for recursion</span>
+<span class="sd">    :returns: The new key</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">97</span><span class="p">,</span> <span class="mi">123</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">current_suffix</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keyset</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">current_suffix</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">generate_suffix</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">keyset</span><span class="p">,</span> <span class="n">current_suffix</span> <span class="o">+</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="disambiguate"><a class="viewcode-back" href="../publi.html#publi.disambiguate">[docs]</a><span class="k">def</span> <span class="nf">disambiguate</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">keyset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: disambiguate(key, keyset)</span>
+
+<span class="sd">    Disambiguate key over set of keys by successively appending more</span>
+<span class="sd">    alphanumeric numbers.</span>
+
+<span class="sd">    See :py:func:`generate_suffix`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keyset</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">key</span>
+    <span class="k">return</span> <span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">generate_suffix</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">keyset</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PublicationDatabase"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase">[docs]</a><span class="k">class</span> <span class="nc">PublicationDatabase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:class:: PublicationDatabase([database_file[, pdf_dir[, prefix]]])</span>
+
+<span class="sd">    Class to hold information about publication lists</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PublicationDatabase.default_comparator"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.default_comparator">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">default_comparator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:function:: default_comparator(cls, item1, item2)</span>
+
+<span class="sd">        Default comparator for bibliograpyh items.This function will first</span>
+<span class="sd">        compare the keys and then check whether both entries have a title</span>
+<span class="sd">        field and if so, check whether their values are similar according to</span>
+<span class="sd">        a ratio computed with :py:class:`difflib.SequenceMatcher`. Equality</span>
+<span class="sd">        is assumed if `r&gt;=0.8`</span>
+
+<span class="sd">        :param class cls: Class object</span>
+<span class="sd">        :param tuple item1: First bibliography item</span>
+<span class="sd">        :param tuple item2: Second bibliography item</span>
+<span class="sd">        :returns: Whether the two are duplicates or not</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key1</span><span class="p">,</span> <span class="n">entry1</span> <span class="o">=</span> <span class="n">item1</span>
+        <span class="n">key2</span><span class="p">,</span> <span class="n">entry2</span> <span class="o">=</span> <span class="n">item2</span>
+        <span class="k">if</span> <span class="n">key1</span> <span class="o">==</span> <span class="n">key2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;title&#39;</span> <span class="ow">in</span> <span class="n">entry1</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">title1</span> <span class="o">=</span> <span class="n">entry1</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39;booktitle&#39;</span> <span class="ow">in</span> <span class="n">entry1</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">title1</span> <span class="o">=</span> <span class="n">entry1</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;booktitle&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Entry has neither title nor booktitle&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;title&#39;</span> <span class="ow">in</span> <span class="n">entry2</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">title2</span> <span class="o">=</span> <span class="n">entry2</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39;booktitle&#39;</span> <span class="ow">in</span> <span class="n">entry2</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">title2</span> <span class="o">=</span> <span class="n">entry2</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;booktitle&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Entry has neither title nor booktitle&#39;</span><span class="p">)</span>
+
+            <span class="n">similarity</span> <span class="o">=</span> <span class="n">SequenceMatcher</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">title1</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span>
+                                         <span class="n">title2</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span>
+                                         <span class="n">autojunk</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">ratio</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">similarity</span> <span class="o">&gt;</span> <span class="mf">0.8</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pdf_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        .. py:method:: __init__([database_file[, pdf_dir[, prefix]]])</span>
+
+<span class="sd">        Create a database by reading all the bibliography data in a BibTeX</span>
+<span class="sd">        file.</span>
+
+<span class="sd">        :param str database_file: Json file listing members and\</span>
+<span class="sd">           associated file locations of bibfiles</span>
+<span class="sd">        :param str prefix: Folder prefix for saving/loading individual\</span>
+<span class="sd">            bib files and pdfs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">database_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database_file</span> <span class="o">=</span> <span class="n">database_file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="n">database_file</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">database_file</span><span class="p">,</span> <span class="n">pdf_dir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PublicationDatabase.delete"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: delete(key)</span>
+
+<span class="sd">        Remove item from bilbiography. This operation is linear, since the\</span>
+<span class="sd">        underlying :py:class:`pybtex.utils.OrderedCaseInsensitiveDict` does\</span>
+<span class="sd">        not support deletion. This will also remove the bibfile associated\</span>
+<span class="sd">        with `key`.</span>
+
+<span class="sd">        :param str key: Bibliography key to delete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
+                <span class="c1"># dirty hack since CaseInsensitiveOrderedDict does not</span>
+                <span class="c1"># support deletion</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;_dict&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="c1"># clean up bib file and pdf</span>
+        <span class="n">bibfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;bib&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.bib&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bibfile</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">bibfile</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span></div>
+
+        <span class="c1"># pdffile = self.prefix / Path(&#39;pdf&#39;) / Path(&#39;%s.pdf&#39;</span>
+        <span class="c1">#                                                                % key)</span>
+        <span class="c1"># if pdffile.exists():</span>
+        <span class="c1">#     pdffile.unlink()</span>
+
+<div class="viewcode-block" id="PublicationDatabase.save"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: save</span>
+
+<span class="sd">         Serialize self to pickled file named **db.pckl** for caching and</span>
+<span class="sd">         update the :py:attr:`database_file` with all entries. Also,</span>
+<span class="sd">         directories **abstract**, **pdf** and **bib** are created under</span>
+<span class="sd">         :py:attr:`prefix` which are filled with one file per key each –</span>
+<span class="sd">         one for a BibTeX file with the single entry, one text file for</span>
+<span class="sd">         the abstract (if present in the entry) and one pdf file (if a</span>
+<span class="sd">         pdf named like the entry&#39;s key was found in :py:attr:`pdf_dir`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;db.pckl&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># update the original database file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database_file</span><span class="p">,</span>
+                                      <span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">)</span>
+            <span class="n">bibdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;bib&#39;</span><span class="p">)</span>
+            <span class="n">abstractdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;abstracts&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">bibdir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">bibdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">abstractdir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">abstractdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># make copy without our secret fields</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                               <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">private_fields</span><span class="p">}</span>
+                <span class="c1"># write single bib entry</span>
+                <span class="n">bibfile</span> <span class="o">=</span> <span class="n">bibdir</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;.bib&#39;</span><span class="p">)</span>
+                <span class="n">BibliographyData</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">item</span><span class="p">})</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">bibfile</span><span class="p">),</span>
+                                                      <span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">)</span>
+                <span class="c1"># write abstract separately, if present. Format to 80 characters</span>
+                <span class="k">if</span> <span class="s1">&#39;abstract&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                    <span class="n">abstract_file</span> <span class="o">=</span> <span class="n">abstractdir</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;.txt&#39;</span><span class="p">)</span>
+                    <span class="n">abstract</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;abstract&#39;</span><span class="p">]</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">abstract_file</span><span class="p">),</span>
+                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">text</span> <span class="o">=</span> <span class="n">make_plain</span><span class="p">(</span><span class="n">abstract</span><span class="p">)</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.load"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: load</span>
+
+<span class="sd">        Deserialize self from pickled file named **db.pckl**.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;db.pckl&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publications</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.populate"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.populate">[docs]</a>    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_file</span><span class="p">,</span> <span class="n">pdf_dir</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: populate(database_file, pdf_dir)</span>
+
+<span class="sd">        Collect all bibdata from all files into one big-ass database (self),</span>
+<span class="sd">        rekeying the entries.  This method will also set *publipy_biburl*,</span>
+<span class="sd">        *publipy_abstracturl*, and *publipy_pdfurl* attributes on the entries.</span>
+<span class="sd">        Pdf files are copied to :py:attr:`pdf_dir` **/pdf**.</span>
+
+<span class="sd">        :param str database_file: File containing all bibliography data</span>
+<span class="sd">        :param str pdf_dir: Directory filled with pdfs named by their\</span>
+<span class="sd">            bibliography keys</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publications</span> <span class="o">=</span> <span class="n">BibliographyData</span><span class="p">()</span>
+        <span class="n">publications</span> <span class="o">=</span> <span class="n">read_bibfile</span><span class="p">(</span><span class="n">database_file</span><span class="p">)</span><span class="o">.</span><span class="n">entries</span>
+
+        <span class="c1"># ensure the pdf directory exists</span>
+        <span class="k">if</span> <span class="n">pdf_dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">oldkey</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">publications</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">generate_key_swe</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;publipy_biburl&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;publipy_biburl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;bib&#39;</span><span class="p">)</span> <span class="o">/</span>
+                                                    <span class="n">Path</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;.bib&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s1">&#39;abstract&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;publipy_abstracturl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span>
+                                                         <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;abstracts&#39;</span><span class="p">)</span> <span class="o">/</span>
+                                                         <span class="n">Path</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;.txt&#39;</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">pdf_dir</span> <span class="ow">and</span> <span class="s1">&#39;publipy_pdfurl&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="n">pdf_path_old</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">pdf_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">oldkey</span> <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pdf_path_old</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">pdf_path_old</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                    <span class="n">pdf_path_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;pdf&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span>
+                                                                    <span class="s1">&#39;.pdf&#39;</span><span class="p">)</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pdf_path_old</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_path_new</span><span class="p">))</span>
+                    <span class="n">item</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;publipy_pdfurl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_path_new</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_entry</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.find_duplicates"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.find_duplicates">[docs]</a>    <span class="k">def</span> <span class="nf">find_duplicates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comparator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: find_duplicates([comparator])</span>
+
+<span class="sd">        Find suspected duplicates.</span>
+
+<span class="sd">        :param comparator: binary function to determine whether two bib items\</span>
+<span class="sd">        (of type (:py:class:`str`, :py:class:`pybtex.database.Entry`)) are\</span>
+<span class="sd">        identical</span>
+<span class="sd">        :type comparator: function (see :py:func:`default_comparator`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">comparator</span><span class="p">:</span>
+            <span class="n">comparator</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="o">.</span><span class="n">default_comparator</span>
+        <span class="n">suspects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># it seems that OrderedCaseInsensitiveDict, which inherits from</span>
+        <span class="c1"># MutableMapping, does not provide an items() iterator, so we need</span>
+        <span class="c1"># to form tuples manually</span>
+        <span class="n">combos</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">([(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                               <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">combos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">comparator</span><span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
+                <span class="c1"># return only the keys</span>
+                <span class="n">suspects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">item2</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">suspects</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.add_entry"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.add_entry">[docs]</a>    <span class="k">def</span> <span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: add_entry(key, entry)</span>
+
+<span class="sd">        Add an entry to the database.</span>
+
+<span class="sd">        :param str key: Key of the new entry. Will be disambiguated before\</span>
+<span class="sd">            insertion</span>
+<span class="sd">        :param entry: Entry to add</span>
+<span class="sd">        :type entry: :py:class:`pybtex.database.Entry`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">Entry</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected type pybtex.database.Entry, got %&#39;</span> <span class="o">%</span>
+                             <span class="nb">type</span><span class="p">(</span><span class="n">entry</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">disambiguate</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<div class="viewcode-block" id="PublicationDatabase.add_bibdata"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.add_bibdata">[docs]</a>    <span class="k">def</span> <span class="nf">add_bibdata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entries</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py::method:: add_bibdata(entries)</span>
+
+<span class="sd">        Add several entries to the database.</span>
+
+<span class="sd">        :param entries: Entries to add</span>
+<span class="sd">        :type entries: str or :py:class:`pybtex.database.BibliographyData`. If\</span>
+<span class="sd">            a string is passed it will be treated as the name of a BibTeX file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">bibdata</span> <span class="o">=</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;bibtex&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bibdata</span> <span class="o">=</span> <span class="n">entries</span>  <span class="c1"># Assume it&#39;s BibliographyData</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bibdata</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">disambiguate</span><span class="p">(</span><span class="n">generate_key_bibtool</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Entry added with key key: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_entry</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.iter_entries"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.iter_entries">[docs]</a>    <span class="k">def</span> <span class="nf">iter_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: iter_entries([predicate])</span>
+
+<span class="sd">        Create and iterator for filtering entries.</span>
+
+<span class="sd">        :param predicate: Filter function to use. If ``None``, all entries will\</span>
+<span class="sd">            be included.</span>
+<span class="sd">        :param predicate: function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">predicate</span> <span class="o">=</span> <span class="n">predicate</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">predicate</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.publications_for_year"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.publications_for_year">[docs]</a>    <span class="k">def</span> <span class="nf">publications_for_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_year</span><span class="p">,</span> <span class="n">max_year</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: publications_for_year(min_year, max_year)</span>
+
+<span class="sd">        Get all publications between two years (inclusive)</span>
+
+<span class="sd">        :param min_year: Minimum allowed year</span>
+<span class="sd">        :type min_year: str or int</span>
+<span class="sd">        :param max_year: Maximum allowed year</span>
+<span class="sd">        :type max_year: str or int</span>
+<span class="sd">        :return: Iterator</span>
+<span class="sd">        :raises: ValueError if ``min_year &gt;= max_year``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">max_year</span> <span class="o">&lt;=</span> <span class="n">min_year</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_year must be smaller than max_year&quot;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;year&#39;</span> <span class="ow">and</span> <span class="n">min_year</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_year</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_entries</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.publications_for_type"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.publications_for_type">[docs]</a>    <span class="k">def</span> <span class="nf">publications_for_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: publications_for_type(type)</span>
+
+<span class="sd">        Get all publications of the given kind (book, article, inproceedings..).</span>
+
+<span class="sd">        :param str type: Desired type</span>
+<span class="sd">        :return: Iterator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="nb">type</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_entries</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PublicationDatabase.publications_for_member"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.publications_for_member">[docs]</a>    <span class="k">def</span> <span class="nf">publications_for_member</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. py:method:: publications_for_member(member)</span>
+
+<span class="sd">        Get all publications the given person is involved in.</span>
+<span class="sd">        **Currently not implemented**</span>
+
+<span class="sd">        :param member: Relevant person</span>
+<span class="sd">        :type member: str or :py:class:`pybtex.database.Person`</span>
+<span class="sd">        :return: Iterator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Not implemented&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="build"><a class="viewcode-back" href="../publi.html#publi.build">[docs]</a><span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: build(args)</span>
+
+<span class="sd">    Build and save a :py:class:`PublicationDatabase` from the arguments passed.</span>
+
+<span class="sd">    :param args: :py:class:`argparse.Namespace` object obtained via\</span>
+<span class="sd">        :py:class:`argparse.ArgumentParser`&#39;s\</span>
+<span class="sd">        :py:meth:`argparse.ArgumentParser.parse_args` method.</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pubdata</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">pdf_loc</span><span class="p">)</span>
+    <span class="c1"># duplicates = pubdata.find_duplicates()</span>
+    <span class="c1"># print(&quot;Suspected duplicates: &quot;)</span>
+    <span class="c1"># for key1, key2 in duplicates:</span>
+    <span class="c1">#     bib1 = BibliographyData({key1: pubdata[key1]})</span>
+    <span class="c1">#     bib2 = BibliographyData({key2: pubdata[key2]})</span>
+    <span class="c1">#     print(&quot;\t{} == {}&quot;.format(bib1.to_string(bib_format=&#39;bibtex&#39;),</span>
+    <span class="c1">#                               bib2.to_string(bib_format=&#39;bibtex&#39;)))</span>
+    <span class="c1">#     delete = input(&#39;Delete this? (y/n) &#39;)</span>
+    <span class="c1">#     if delete.lower() in [&#39;y&#39;, &#39;ye&#39;, &#39;yes&#39;, &#39;yo&#39;]:</span>
+    <span class="c1">#         pubdata.delete(key1)</span>
+    <span class="n">pubdata</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="add"><a class="viewcode-back" href="../publi.html#publi.add">[docs]</a><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: add(args)</span>
+
+<span class="sd">    Add item(s) to the database. Uses the ``entries`` field from the arguments.</span>
+
+<span class="sd">    :param args: Command line arguments obtained via\</span>
+<span class="sd">        :py:class:`argparse.ArgumentParser`&#39;s\</span>
+<span class="sd">        :py:meth:`argparse.ArgumentParser.parse_args` method.</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pubdata</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="p">()</span>
+    <span class="n">pubdata</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+    <span class="n">pubdata</span><span class="o">.</span><span class="n">add_bibdata</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span>
+    <span class="n">pubdata</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="read_bibfile"><a class="viewcode-back" href="../publi.html#publi.read_bibfile">[docs]</a><span class="k">def</span> <span class="nf">read_bibfile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: read_bibfile(filename)</span>
+
+<span class="sd">    Parse :py:class:`pybtex.database.BibliographyData` from BibTeX file.</span>
+
+<span class="sd">    :param str filename: Name of the BibTeX file</span>
+<span class="sd">    :returns: The parsed data</span>
+<span class="sd">    :rtype: :py:class:`pybtex.database.BibliographyData`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;bibtex&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">db</span></div>
+
+
+<div class="viewcode-block" id="check_validity"><a class="viewcode-back" href="../publi.html#publi.check_validity">[docs]</a><span class="k">def</span> <span class="nf">check_validity</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: check_validity(entry)</span>
+
+<span class="sd">    Currently unimplemented.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Check if entry is valid by trying to render it</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="print_all_authors"><a class="viewcode-back" href="../publi.html#publi.print_all_authors">[docs]</a><span class="k">def</span> <span class="nf">print_all_authors</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: print_all_authors</span>
+
+<span class="sd">    Print all persons found in the database. Can be authors or editors (in\</span>
+<span class="sd">    spite of the name)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="p">()</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">textify</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">make_plain</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">last_names</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_persons</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">e</span><span class="o">.</span><span class="n">persons</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+    <span class="n">unique_persons</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">textify</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">persons</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">get_persons</span><span class="p">,</span> <span class="n">entries</span><span class="p">)</span> <span class="k">for</span>
+                         <span class="n">role</span> <span class="ow">in</span> <span class="n">persons</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">role</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">pprint</span>
+    <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unique_persons</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="filtered_entries"><a class="viewcode-back" href="../publi.html#publi.filtered_entries">[docs]</a><span class="k">def</span> <span class="nf">filtered_entries</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: filtered_entries(database, args)</span>
+
+<span class="sd">    Get a :py:class:`PublicationDatabase` containing only selected entries.</span>
+<span class="sd">    Will read out the ``person``, ``expr``, and ``mytype`` filters from the</span>
+<span class="sd">    arguments.  Only entries meeting all criteria are selected.</span>
+
+<span class="sd">    :param database: Database of publications</span>
+<span class="sd">    :type database: :py:class:`PublicationDatabase`</span>
+<span class="sd">    :param args: Command line arguments</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">BibData</span> <span class="o">=</span> <span class="n">BibliographyData</span>  <span class="c1"># shorter</span>
+
+    <span class="c1"># slap onto this all constraints</span>
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">predicate</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">person</span><span class="p">:</span>
+        <span class="n">predicate</span> <span class="o">=</span> <span class="n">get_conjunction_filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span>
+                                           <span class="n">get_person_filter</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">person</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">mytype</span><span class="p">:</span>
+        <span class="n">predicate</span> <span class="o">=</span> <span class="n">get_conjunction_filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span>
+                                           <span class="n">get_mytype_filter</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">mytype</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">expr</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">filter_expr</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="c1"># TODO: Don&#39;t fckn eval user input, dipshit</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span>  <span class="c1"># won&#39;t be evaluated before call</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: KeyError&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filter_expr</span><span class="p">(</span><span class="n">Entry</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>  <span class="c1"># eval with dummy entry to force parsing</span>
+            <span class="n">predicate</span> <span class="o">=</span> <span class="n">get_conjunction_filter</span><span class="p">(</span><span class="n">predicate</span><span class="p">,</span> <span class="n">filter_expr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">SyntaxError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s1"> is invalid syntax. Ignoring expression filter&#39;</span> <span class="o">%</span>
+                  <span class="n">args</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span>
+
+    <span class="n">publications</span> <span class="o">=</span> <span class="n">BibData</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span>
+                            <span class="n">database</span><span class="o">.</span><span class="n">iter_entries</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">predicate</span><span class="p">)})</span>
+    <span class="k">return</span> <span class="n">publications</span></div>
+
+
+<div class="viewcode-block" id="write_output"><a class="viewcode-back" href="../publi.html#publi.write_output">[docs]</a><span class="k">def</span> <span class="nf">write_output</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: write_output(content, fname)</span>
+
+<span class="sd">    Convenience for writing string to utf8-encoded file.</span>
+
+<span class="sd">    :param str content: Text to write</span>
+<span class="sd">    :param str fname: File to write to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="render"><a class="viewcode-back" href="../publi.html#publi.render">[docs]</a><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: render(args)</span>
+
+<span class="sd">    Render publication database into various formats. Supported are ``bib``,</span>
+<span class="sd">    ``html``, ``tex`` and ``pdf`` (currently unimplemented)</span>
+
+<span class="sd">    :param args: Command line arguments</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    :return: Rendered database</span>
+<span class="sd">    :rtype: result</span>
+<span class="sd">    :raises: ValueError if unknown format passed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="p">()</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+    <span class="n">known_fmts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bib&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span>
+
+    <span class="n">publications</span> <span class="o">=</span> <span class="n">filtered_entries</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+    <span class="n">fmt</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">fmt</span>
+    <span class="k">if</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s1">&#39;bib&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">publications</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s1">&#39;html&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">render_to_html</span><span class="p">(</span><span class="n">publications</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s1">&#39;tex&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">render_to_tex</span><span class="p">(</span><span class="n">publications</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s1">&#39;pdf&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown format </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s1"> given. Known formats are &#39;</span> <span class="o">+</span>
+                         <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">known_fmts</span><span class="p">)),</span> <span class="n">fmt</span><span class="p">,</span> <span class="o">*</span><span class="n">known_fmts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="list_entries"><a class="viewcode-back" href="../publi.html#publi.list_entries">[docs]</a><span class="k">def</span> <span class="nf">list_entries</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: list_entries(args)</span>
+
+<span class="sd">    Render database to format and write to file. See :py:func:`render`</span>
+
+<span class="sd">    :param args: Command line arguments</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">out</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">outfile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fmt</span><span class="p">):</span>
+        <span class="n">outfile</span> <span class="o">+=</span> <span class="s1">&#39;.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">fmt</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">render</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="n">write_output</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">outfile</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="render_to_html"><a class="viewcode-back" href="../publi.html#publi.render_to_html">[docs]</a><span class="k">def</span> <span class="nf">render_to_html</span><span class="p">(</span><span class="n">publications</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: render_to_html(publications, args)</span>
+
+<span class="sd">    Render publication database to html. Optionally complete or as embeddable</span>
+<span class="sd">    fragment.</span>
+
+<span class="sd">    :param publications: Publications to render</span>
+<span class="sd">    :type publications: :py:class:`PublicationDatabase`</span>
+<span class="sd">    :param args: Command line arguments</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    :return: Rendered database</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">plugin_data</span> <span class="k">import</span> <span class="n">plugin_data</span>
+    <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;label_start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;write_html_wrapper&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">complete_html</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">:</span>
+        <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;groupby&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">groupby</span>
+
+    <span class="k">return</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">format_from_string</span><span class="p">(</span>
+        <span class="n">publications</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;gerunsrtwithlinks&#39;</span><span class="p">,</span>
+        <span class="n">citations</span><span class="o">=</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+        <span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;bibtex&#39;</span><span class="p">,</span>
+        <span class="n">bib_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_backend</span><span class="o">=</span><span class="s1">&#39;customhtml&#39;</span><span class="p">,</span>
+        <span class="n">output_encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="render_to_tex"><a class="viewcode-back" href="../publi.html#publi.render_to_tex">[docs]</a><span class="k">def</span> <span class="nf">render_to_tex</span><span class="p">(</span><span class="n">publications</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: render_to_tex(publications, args)</span>
+
+<span class="sd">    Render publication database to latex. Optionally complete or as embeddable</span>
+<span class="sd">    fragment.</span>
+
+<span class="sd">    :param publications: Publications to render</span>
+<span class="sd">    :type publications: :py:class:`PublicationDatabase`</span>
+<span class="sd">    :param args: Command line arguments</span>
+<span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
+<span class="sd">    :return: Rendered database</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">plugin_data</span> <span class="k">import</span> <span class="n">plugin_data</span>
+    <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;label_start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kn">from</span> <span class="nn">jinja2</span> <span class="k">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span>
+                      <span class="n">block_start_string</span><span class="o">=</span><span class="s1">&#39;((*&#39;</span><span class="p">,</span>
+                      <span class="n">block_end_string</span><span class="o">=</span><span class="s1">&#39;*))&#39;</span><span class="p">,</span>
+                      <span class="n">variable_start_string</span><span class="o">=</span><span class="s1">&#39;(((&#39;</span><span class="p">,</span>
+                      <span class="n">variable_end_string</span><span class="o">=</span><span class="s1">&#39;)))&#39;</span><span class="p">,</span>
+                      <span class="n">comment_start_string</span><span class="o">=</span><span class="s1">&#39;((=&#39;</span><span class="p">,</span>
+                      <span class="n">comment_end_string</span><span class="o">=</span><span class="s1">&#39;=))&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">:</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="n">group_entries_by_key</span><span class="p">(</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
+                                       <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bib&#39;</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">latex</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">({</span>
+            <span class="s1">&#39;grouped&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;groups&#39;</span><span class="p">:</span> <span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
+            <span class="s1">&#39;bibfile&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span>
+            <span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">latex</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">({</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="n">entries</span><span class="p">,</span>
+            <span class="s1">&#39;bibfile&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span>
+            <span class="p">})</span>
+    <span class="k">return</span> <span class="n">latex</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../publi.html#publi.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. py:function:: main</span>
+
+<span class="sd">    Process user commands. The program has several subcommands. Run with</span>
+<span class="sd">    `--help` for full details.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">subparsers</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subparsers</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s1">&#39;subparser_name&#39;</span><span class="p">)</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1">#                             build subcommand                             #</span>
+    <span class="c1">############################################################################</span>
+    <span class="n">build_parser</span> <span class="o">=</span> <span class="n">subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;build&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Build a database&#39;</span><span class="p">)</span>
+    <span class="n">build_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--database&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;Path to .bib file with all entries&#39;</span><span class="p">))</span>
+    <span class="n">build_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--pdfs&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path to pdf folder.&#39;</span><span class="p">,</span>
+                              <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;pdf_loc&#39;</span><span class="p">)</span>
+    <span class="n">build_parser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">build</span><span class="p">)</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1">#                             add subcommand                               #</span>
+    <span class="c1">############################################################################</span>
+    <span class="n">add_parser</span> <span class="o">=</span> <span class="n">subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;add&#39;</span><span class="p">,</span>
+                                       <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Add something to the database&#39;</span><span class="p">)</span>
+    <span class="n">add_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;--entries&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;bibtex entry to add&#39;</span><span class="p">)</span>
+    <span class="n">add_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="s1">&#39;--file&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bibfile to add to the database&#39;</span><span class="p">)</span>
+
+    <span class="n">add_parser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">add</span><span class="p">)</span>
+    <span class="c1"># TODO: Fuzzy author guessing</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1">#                             list subcommand                              #</span>
+    <span class="c1">############################################################################</span>
+    <span class="n">list_parser</span> <span class="o">=</span> <span class="n">subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s1">&#39;list&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;List entries&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="s1">&#39;--format&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;bib&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Format to output&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;fmt&#39;</span><span class="p">,</span>
+                             <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;bib&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">])</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--out&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;bibliography&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;File to output to&#39;</span><span class="p">,</span>
+                             <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;out&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;--expr&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Filter with python expression. &#39;</span>
+                             <span class="s1">&#39;A variable </span><span class="se">\&#39;</span><span class="s1">entry</span><span class="se">\&#39;</span><span class="s1"> denotes the &#39;</span>
+                             <span class="s1">&#39;entry to consider&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--person&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print only publications this person is &#39;</span>
+                             <span class="s1">&#39;involved in (be it author or editor)&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--mytype&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print only publications that have &#39;</span>
+                             <span class="s1">&#39;this mytype&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--complete_html&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;complete_html&#39;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether or not to produce valid HTML &#39;</span>
+                             <span class="s1">&#39;or only the &lt;dl&gt; element to place inside another &#39;</span>
+                             <span class="s1">&#39;document. Ignored in any format except html&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--groupby&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Group resulting publications into sections.&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;--bibfile&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;all.bib&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the file to &#39;</span>
+                             <span class="s1">&#39;reference in tex. Must be generated separately&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-t&#39;</span><span class="p">,</span> <span class="s1">&#39;--template&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;templates/template.tex&#39;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the jinja2 LaTeX template&#39;</span><span class="p">)</span>
+
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">list_entries</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">subparser_name</span><span class="p">:</span>
+        <span class="c1"># dispatch subparser handler</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Rasmus Diederichsen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

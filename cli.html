@@ -1,0 +1,244 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Before you start &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Overview" href="intro.html" /> 
+  </head>
+  <body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>Before you start</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="intro.html">Overview</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="before-you-start">
+<h1>Before you start<a class="headerlink" href="#before-you-start" title="Permalink to this headline">¶</a></h1>
+<p>In the current setup, we have BibTeX files for each group member. They should
+first be assembled into one BibTex file by use of <code class="docutils literal"><span class="pre">bibtool</span></code>. This can be done
+like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">bibtool</span> <span class="o">-</span><span class="n">Aa</span> <span class="o">-</span><span class="n">d</span> <span class="o">-</span><span class="n">f</span> <span class="n">short</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">*.</span><span class="n">bib</span> <span class="o">-</span><span class="n">o</span> <span class="nb">all</span><span class="o">/</span><span class="nb">all</span><span class="o">.</span><span class="n">bib</span>
+        <span class="o">^</span>    <span class="o">^</span>  <span class="o">^</span>        <span class="o">^</span>  <span class="o">^</span>
+        <span class="o">|</span>    <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>  <span class="o">|</span>
+        <span class="o">|-</span><span class="n">alphanumeric</span> <span class="n">disambiguation</span>
+             <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>  <span class="o">|</span>
+             <span class="o">|</span>  <span class="o">|-</span><span class="n">generate</span> <span class="n">new</span> <span class="n">short</span> <span class="n">keys</span>
+             <span class="o">|</span>           <span class="o">|</span>  <span class="o">|</span>
+             <span class="o">|-</span><span class="n">comment</span> <span class="n">out</span> <span class="n">duplicate</span> <span class="n">entries</span>
+                         <span class="o">|</span>  <span class="o">|</span>
+                         <span class="o">|</span>  <span class="o">|-</span><span class="nb">input</span> <span class="n">files</span>
+                         <span class="o">|</span>
+                         <span class="o">|-</span><span class="n">sort</span> <span class="n">ascending</span>
+</pre></div>
+</div>
+<p>The resulting BibTeX file can then be fed to Publipy.</p>
+</div>
+<div class="section" id="command-line-interface">
+<h1>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h1>
+<p>Publipy currently has three subcommands to <code class="docutils literal"><span class="pre">build</span></code>, <code class="docutils literal"><span class="pre">list</span></code>, and <code class="docutils literal"><span class="pre">add</span></code>
+bibliography data.</p>
+<div class="section" id="building-a-database">
+<h2>Building a database<a class="headerlink" href="#building-a-database" title="Permalink to this headline">¶</a></h2>
+<p>Before anything else, bibliography data must be imported into publipy via
+<code class="docutils literal"><span class="pre">publipy</span> <span class="pre">build</span></code>. The options are such:</p>
+<dl class="option">
+<dt id="cmdoption-d">
+<code class="descname">-d</code><code class="descclassname"> &lt;DATABASE&gt;</code><code class="descclassname">, </code><code class="descname">--database</code><code class="descclassname"> &lt;DATABASE&gt;</code><a class="headerlink" href="#cmdoption-d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to <code class="docutils literal"><span class="pre">.bib</span></code> file with all entries</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-p">
+<code class="descname">-p</code><code class="descclassname"> &lt;PDF_LOC&gt;</code><code class="descclassname">, </code><code class="descname">--pdfs</code><code class="descclassname"> &lt;PDF_LOC&gt;</code><a class="headerlink" href="#cmdoption-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to pdf folder.</p>
+</dd></dl>
+
+<p>This will rekey all entries (since collisions from the Bibtool pass may have led
+to similar keys) and read all pdf files from the pdf directory. The files inside
+should be named with the key of their associated publication.
+The command will create the following directories under the one in which the
+database file is located</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">bib</span></code> - Contains singular BibTeX files for each entry</li>
+<li><code class="docutils literal"><span class="pre">abstract</span></code> - Contains abstracts of all publications which possess this field</li>
+<li><code class="docutils literal"><span class="pre">pdf</span></code> For each pdf file whose name is a key in the database, a new file will be placed here</li>
+</ul>
+<p>In every case, a file’s its name will reflect the new key which its BibTeX entry was given.</p>
+<p><code class="docutils literal"><span class="pre">build</span></code> ing a database will add the fields <code class="docutils literal"><span class="pre">publipy_biburl</span></code>,
+<code class="docutils literal"><span class="pre">publipy_pdfurl</span></code>, and <code class="docutils literal"><span class="pre">publipy_abstracturl</span></code> and assign the paths to the
+files created in the above directories, so that in the html output, proper links
+can be generated.</p>
+</div>
+<div class="section" id="exporting-a-database">
+<h2>Exporting a database<a class="headerlink" href="#exporting-a-database" title="Permalink to this headline">¶</a></h2>
+<p>Publipy can export to different formats:</p>
+<ul class="simple">
+<li>HTML - Items are wrapped in <code class="docutils literal"><span class="pre">&lt;dd&gt;</span></code> tags</li>
+<li>TeX - A LaTeX document is generated which when compiled contains the
+bibliography data</li>
+<li>BibTeX</li>
+</ul>
+<p>The <code class="docutils literal"><span class="pre">list</span></code> subcommand understands these options</p>
+<dl class="option">
+<dt id="cmdoption-f">
+<code class="descname">-f</code><code class="descclassname"> {bib,html,tex,pdf}</code><code class="descclassname">, </code><code class="descname">--format</code><code class="descclassname"> {bib,html,tex}</code><a class="headerlink" href="#cmdoption-f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format to output.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-o">
+<code class="descname">-o</code><code class="descclassname"> OUT</code><code class="descclassname">, </code><code class="descname">--out</code><code class="descclassname"> OUT</code><a class="headerlink" href="#cmdoption-o" title="Permalink to this definition">¶</a></dt>
+<dd><p>File to write to. The appropriate extension is automatically appended, if
+not given in the name.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-e">
+<code class="descname">-e</code><code class="descclassname"> EXPR</code><code class="descclassname">, </code><code class="descname">--expr</code><code class="descclassname"> EXPR</code><a class="headerlink" href="#cmdoption-e" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter with python expression. A variable <code class="docutils literal"><span class="pre">entry</span></code> denotes the entry to
+consider. This is currently insecure, since it calls <code class="docutils literal"><span class="pre">eval()</span></code> on the
+input.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-person">
+<code class="descname">-p</code><code class="descclassname"> PERSON</code><code class="descclassname">, </code><code class="descname">--person</code><code class="descclassname"> PERSON</code><a class="headerlink" href="#cmdoption-person" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print only publications this person is involved in (be
+it author or editor). Currently, there is no fuzzy matching, so the name
+(including middle names) must be exact.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-m">
+<code class="descname">-m</code><code class="descclassname"> MYTYPE</code><code class="descclassname">, </code><code class="descname">--mytype</code><code class="descclassname"> MYTYPE</code><a class="headerlink" href="#cmdoption-m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print only publications that have this <code class="docutils literal"><span class="pre">mytype</span></code> value.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-c">
+<code class="descname">-c</code><code class="descclassname"></code><code class="descclassname">, </code><code class="descname">--complete_html</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to produce valid HTML or only the <code class="docutils literal"><span class="pre">&lt;dl&gt;</span></code> element to place
+inside another document. Ignored in any format except html</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-g">
+<code class="descname">-g</code><code class="descclassname"> GROUPBY</code><code class="descclassname">, </code><code class="descname">--groupby</code><code class="descclassname"> GROUPBY</code><a class="headerlink" href="#cmdoption-g" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group resulting publications into sections. The argument is the field to
+group on.  Items which don’t have this field are lumped together into an
+<code class="docutils literal"><span class="pre">n/a</span></code> category.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-b">
+<code class="descname">-b</code><code class="descclassname"> BIBFILE</code><code class="descclassname">, </code><code class="descname">--bibfile</code><code class="descclassname"> BIBFILE</code><a class="headerlink" href="#cmdoption-b" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the file to reference in the tex file. Must be
+generated separately (e.g. by use of <code class="docutils literal"><span class="pre">publipy</span> <span class="pre">list</span></code>).</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-t">
+<code class="descname">-t</code><code class="descclassname"> TEMPLATE</code><code class="descclassname">, </code><code class="descname">--template</code><code class="descclassname"> TEMPLATE</code><a class="headerlink" href="#cmdoption-t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the jinja2 LaTeX template. You can use a custom one if desired.
+Igored unless TeX output is chosen.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="html">
+<h3>HTML<a class="headerlink" href="#html" title="Permalink to this headline">¶</a></h3>
+<p>A common usage might me to export in HTML format all entries of a given author,
+grouped by the <code class="docutils literal"><span class="pre">mytype</span></code> attribute. The corresponding command line would look
+like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">publipy</span> <span class="nb">list</span> <span class="o">-</span><span class="n">f</span> <span class="n">html</span> <span class="o">-</span><span class="n">p</span> <span class="s2">&quot;Mathias Menninghaus&quot;</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">g</span> <span class="n">mytype</span> <span class="o">-</span><span class="n">o</span> <span class="n">menning</span>
+</pre></div>
+</div>
+<p>The result output as <code class="docutils literal"><span class="pre">menning.html</span></code> will look like this:</p>
+<img alt="_images/sample_output.png" class="align-center" src="_images/sample_output.png" />
+</div>
+<div class="section" id="latex-pdf">
+<h3>LaTeX/PDF<a class="headerlink" href="#latex-pdf" title="Permalink to this headline">¶</a></h3>
+<p>Creating a PDF document is marginally more involved. Specifying <code class="docutils literal"><span class="pre">tex</span></code> output
+format will yield a <code class="docutils literal"><span class="pre">.tex</span></code> file which can be compiled provided a BibTeX file
+named named like the <code class="docutils literal"><span class="pre">bibfile</span></code> argument is present during compilation. This
+file can be generated by publipy. You may compile the file yourself (compile,
+run bibtex twice, compile twice more) or use the <code class="docutils literal"><span class="pre">compile.sh</span></code> script shipping
+with the software which will perform these steps on all <code class="docutils literal"><span class="pre">*.tex</span></code> files in its
+directory (it will swallow any errors, however).</p>
+<p>You can pass a custom template with the <code class="docutils literal"><span class="pre">-t/--template</span></code>
+argument. The jinja2 engine is configured to use <code class="docutils literal"><span class="pre">((*</span> <span class="pre">...</span> <span class="pre">*))</span></code> as delimiters
+and makes available the following identifiers:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">grouped</span></code>, <cite>boolean</cite>, <code class="docutils literal"><span class="pre">True</span></code> if <cite>-g</cite> was passed during generation, so the
+output is grouped into sections</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal"><span class="pre">groups</span></code>, <cite>dictionary</cite> with <code class="docutils literal"><span class="pre">name:</span> <span class="pre">group</span></code> pairs.</dt>
+<dd><ul class="first last">
+<li>Each group is a <cite>dict</cite> and provides <code class="docutils literal"><span class="pre">key:</span> <span class="pre">item</span></code> pairs.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><code class="docutils literal"><span class="pre">bibfile</span></code>, <cite>string</cite>, name of the BibTeX file to reference.</li>
+</ul>
+<p>Scurtinize the provided example or the publipy source code for creating your own
+templates.</p>
+</div>
+<div class="section" id="bibtex">
+<h3>BibTex<a class="headerlink" href="#bibtex" title="Permalink to this headline">¶</a></h3>
+<p>Generating BibTeX is trivial, using <cite>bib</cite> as a format argument will simply
+output a BibTeX file.</p>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="intro.html">Overview</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Rasmus Diederichsen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>
