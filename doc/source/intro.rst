@@ -22,4 +22,7 @@ Osnabrück University. It can do the following things:
 * Add new bibliograpy entries to the database and have them moved to the correct
   location and assigned a new key (use the ``add`` subcommand)
 
+Source
+======
+The tool can be found at `Github <https://github.com/themightyoarfish/uos-swe-publication-utility>`_.
 
