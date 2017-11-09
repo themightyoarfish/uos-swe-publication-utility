@@ -10,8 +10,8 @@ Welcome to publipy's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   installation
    intro
+   installation
    cli
 
 
