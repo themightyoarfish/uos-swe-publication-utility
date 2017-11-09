@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'publipy'
-copyright = '2017, Rasmus Diederichsen'
+copyright = '2017, Universität Osnabrück'
 author = 'Rasmus Diederichsen'
 
 # The version info for the project you're documenting, acts as replacement for
