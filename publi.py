@@ -28,7 +28,7 @@ private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
 stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
-def group_entries_by_key(entries, sorter):
+def group_entries_by_key(entries, sorter, group_name_dict={}):
     """
     .. py:function:: group_entries_by_key(entries, sorter)
 
@@ -39,6 +39,7 @@ def group_entries_by_key(entries, sorter):
     :param list entries: Iterable of :py:class:`pybtex.database.Entry`\
     objects
     :param str sorter: Name of the field to sort on
+    :param dict group_name_dict: Dict to map the group names to something else
     :return: Dictionary mapping field value to list of entries with that\
     value
     :rtype: dict
@@ -57,7 +58,7 @@ def group_entries_by_key(entries, sorter):
     group_names = []
     for k, g in groupby(sorted_entries, key=group_sorter):
         groups.append(list(g))
-        group_names.append(k)
+        group_names.append(group_name_dict.get(k, k))
 
     grouped_entries = dict((k, v) for k, v in zip(group_names, groups))
     return grouped_entries
@@ -666,7 +667,6 @@ def render(args):
     known_fmts = ['bib', 'html', 'tex', 'pdf']
 
     publications = filtered_entries(db, args)
-
     fmt = args.fmt
     if fmt == 'bib':
         result = publications.to_string(bib_format='custombibtex')
@@ -841,6 +841,9 @@ def main():
     list_parser.add_argument('-t', '--template', required=False, type=str,
                              default='templates/template.tex',
                              help='Name of the jinja2 LaTeX template')
+    list_parser.add_argument('-s', '--sort-by', required=False, type=str,
+                             default='year',
+                             help='Attribute to sort by')
 
     list_parser.set_defaults(func=list_entries)
 
