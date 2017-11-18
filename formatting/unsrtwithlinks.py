@@ -16,7 +16,7 @@ class Style(UnsrtStyle):
             # must be done before calling super()
             label_style = find_plugin('pybtex.style.labels', 'numberwithoffset')
         label_style.label_start = plugin_data['label_start']
-        sorting_style = 'custom_author_year_title'
+        sorting_style = 'year_author'
 
         super().__init__(label_style=label_style, name_style=name_style,
                          sorting_style=sorting_style,
