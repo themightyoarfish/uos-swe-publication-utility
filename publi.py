@@ -732,7 +732,7 @@ def render_to_html(publications, args):
 
     return pybtex.format_from_string(
         publications.to_string(bib_format='custombibtex'),
-        'gerunsrtwithlinks',
+        'myunsrt',
         citations=publications.entries.keys(),
         bib_format='bibtex',
         bib_encoding=None,
