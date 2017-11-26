@@ -12,10 +12,6 @@ class Style(UnsrtStyle):
     def __init__(self, label_style=None, name_style=None, sorting_style=None,
                  abbreviate_names=False, min_crossrefs=2, **kwargs):
 
-        if not label_style and 'label_start' in plugin_data:
-            # must be done before calling super()
-            label_style = find_plugin('pybtex.style.labels', 'numberwithoffset')
-        label_style.label_start = plugin_data['label_start']
         sorting_style = 'year_author'
 
         super().__init__(label_style=label_style, name_style=name_style,
@@ -47,7 +43,6 @@ class Style(UnsrtStyle):
         for group_name, group in sorted(grouped_entries.items()):
             sorted_entries = self.sort(group)
             labels = list(self.format_labels(sorted_entries))
-            self.label_style.label_start += len(labels)
             for label, entry in zip(labels, sorted_entries):
                 for persons in entry.persons.itervalues():
                     for person in persons:
