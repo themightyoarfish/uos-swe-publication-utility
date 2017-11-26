@@ -36,11 +36,13 @@ class Style(UnsrtStyle):
         """
         if 'groupby' in plugin_data:
             sorter = plugin_data['groupby']
-            grouped_entries = group_entries_by_key(entries, sorter)
+            group_name_dict = plugin_data.get('mapping_%s' % sorter, {})
+            grouped_entries = group_entries_by_key(entries, sorter,
+                                                   group_name_dict)
         else:
             grouped_entries = {'ALL': list(entries)}
 
-        for group_name, group in sorted(grouped_entries.items()):
+        for group_name, group in grouped_entries.items():
             sorted_entries = self.sort(group)
             labels = list(self.format_labels(sorted_entries))
             for label, entry in zip(labels, sorted_entries):

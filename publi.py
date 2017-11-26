@@ -9,6 +9,7 @@
 import argparse
 import shutil
 import copy
+from collections import OrderedDict
 from filters import get_conjunction_filter, get_person_filter, get_mytype_filter
 from pickle import dump, load
 from itertools import combinations
@@ -28,7 +29,7 @@ private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
 stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
-def group_entries_by_key(entries, sorter, group_name_dict={}):
+def group_entries_by_key(entries, sorter, group_name_dict=None):
     """
     .. py:function:: group_entries_by_key(entries, sorter)
 
@@ -56,11 +57,22 @@ def group_entries_by_key(entries, sorter, group_name_dict={}):
     # multiple times
     groups = []
     group_names = []
-    for k, g in groupby(sorted_entries, key=group_sorter):
-        groups.append(list(g))
-        group_names.append(group_name_dict.get(k, k))
+    if group_name_dict:
+        # for some unknown reason we need to turn the individual group iterators
+        # into lists immediately, it seems to be impossible to have a dict of
+        # name -> iterator. The iterators are all empty then (wtf)
+        group_dict = dict((g, list(v)) for g, v in groupby(sorted_entries,
+                                                           key=group_sorter))
+        for value, mapping in group_name_dict.items():
+            entries = list(group_dict[value])
+            groups.append(entries)
+            group_names.append(mapping)
+    else:
+        for k, g in groupby(sorted_entries, key=group_sorter):
+            groups.append(list(g))
+            group_names.append(k)
 
-    grouped_entries = dict((k, v) for k, v in zip(group_names, groups))
+    grouped_entries = OrderedDict((k, v) for k, v in zip(group_names, groups))
     return grouped_entries
 
 
@@ -755,8 +767,9 @@ def render_to_tex(publications, args):
                       )
     template = env.get_template(args.template)
     if args.groupby:
+        group_name_dict = plugin_data.get('mapping_%s' % args.groupby, {})
         entries = group_entries_by_key(publications.entries.items(),
-                                       args.groupby)
+                                       args.groupby, group_name_dict)
         if args.bibfile.endswith('.bib'):
             args.bibfile = args.bibfile[:-4]
         latex = template.render({
