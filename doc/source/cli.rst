@@ -161,6 +161,21 @@ run bibtex twice, compile twice more) or use the ``compile.sh`` script shipping
 with the software which will perform these steps on all ``*.tex`` files in its
 directory (it will swallow any errors, however).
 
+The workflow would be thus::
+
+    ./publipy list -f bib -o all
+    ./publi.py list -f tex -o all -c -g mytype -s year -b all
+
+    mv all.bib all.tex tex/
+    cd tex/
+    ./compile.sh
+
+The TeX file will reference ``all.bib``, so you need to pass the `-b` flag to
+the ``list`` subcommand when generating the TeX file for another BibTeX file.
+
+This will create ``all.pdf``. You can also compile this manually as you would
+any other TeX document.
+
 You can pass a custom template with the ``-t/--template``
 argument. The jinja2 engine is configured to use ``((* ... *))`` as delimiters
 and makes available the following identifiers:
