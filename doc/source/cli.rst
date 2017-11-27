@@ -141,7 +141,7 @@ grouped by the ``mytype`` and sorted by year. This can be done like this::
     ./publipy list -f html -c -g mytype -o all -s year
 
 A common usage might be to export all entries of a given author. For this, just
-pass the ``--person`` option additionally.
+pass the ``--person`` option additionally.::
 
     ./publipy list -f html -p "Mathias Menninghaus" -c -g mytype -o menning -s year
 
