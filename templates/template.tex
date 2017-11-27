@@ -3,6 +3,28 @@
 \usepackage{lmodern, hyperref, array, amsmath, amssymb, microtype, IEEEtrantools}
 \usepackage[utf8x]{inputenc}
 
+%% This is to remove the "References" title before each bibunit section.
+%% from https://tex.stackexchange.com/a/86817
+\makeatletter
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\makeatother
+
 \title{Publications by the Software Engeneering group, Osnabrück University}
 
 \begin{document}
