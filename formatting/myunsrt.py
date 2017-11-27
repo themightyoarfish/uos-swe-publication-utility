@@ -54,42 +54,6 @@ class Style(UnsrtStyle):
                 f = getattr(self, "format_" + entry.type)
                 text = f(entry)
 
-                bib = optional[
-                    join['[',
-                         tag('tt')[
-                             href[
-                                 field('publipy_biburl', raw=True),
-                                 'bib'
-                             ]
-                         ],
-                         ']'
-                         ]
-                ]
-
-                pdf = optional[
-                    join['[',
-                         tag('tt')[
-                             href[
-                                 field('publipy_pdfurl', raw=True),
-                                 'pdf'
-                             ]
-                         ],
-                         ']'
-                         ]
-                ]
-
-                abstract = optional[
-                    join['[',
-                         tag('tt')[
-                             href[
-                                 field('publipy_abstracturl', raw=True),
-                                 'abstract'
-                             ]
-                         ],
-                         ']'
-                         ]
-                ]
-
                 www = join['[',
                            tag('tt')[
                                href[
@@ -102,9 +66,7 @@ class Style(UnsrtStyle):
 
                 text += ' '  # make some space
                 if entry.fields['url_home']:
-                    text += join(sep=' ')[bib, pdf, abstract,
-                                          www].format_data(entry)
-                else:
-                    text += join(sep=' ')[bib, pdf, abstract].format_data(entry)
+                    text += join(sep=' ')[www].format_data(entry)
 
                 yield group_name, FormattedEntry(entry.key, text, label)
+

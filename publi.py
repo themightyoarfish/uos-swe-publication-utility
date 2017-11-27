@@ -9,6 +9,7 @@
 import argparse
 import shutil
 import copy
+from collections import OrderedDict
 from filters import get_conjunction_filter, get_person_filter, get_mytype_filter
 from pickle import dump, load
 from itertools import combinations
@@ -28,7 +29,7 @@ private_fields = set(['publipy_pdfurl', 'publipy_biburl', 'mytype', 'key',
 stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 
-def group_entries_by_key(entries, sorter):
+def group_entries_by_key(entries, sorter, group_name_dict=None):
     """
     .. py:function:: group_entries_by_key(entries, sorter)
 
@@ -39,6 +40,7 @@ def group_entries_by_key(entries, sorter):
     :param list entries: Iterable of :py:class:`pybtex.database.Entry`\
     objects
     :param str sorter: Name of the field to sort on
+    :param dict group_name_dict: Dict to map the group names to something else
     :return: Dictionary mapping field value to list of entries with that\
     value
     :rtype: dict
@@ -55,11 +57,22 @@ def group_entries_by_key(entries, sorter):
     # multiple times
     groups = []
     group_names = []
-    for k, g in groupby(sorted_entries, key=group_sorter):
-        groups.append(list(g))
-        group_names.append(k)
+    if group_name_dict:
+        # for some unknown reason we need to turn the individual group iterators
+        # into lists immediately, it seems to be impossible to have a dict of
+        # name -> iterator. The iterators are all empty then (wtf)
+        group_dict = dict((g, list(v)) for g, v in groupby(sorted_entries,
+                                                           key=group_sorter))
+        for value, mapping in group_name_dict.items():
+            entries = list(group_dict[value])
+            groups.append(entries)
+            group_names.append(mapping)
+    else:
+        for k, g in groupby(sorted_entries, key=group_sorter):
+            groups.append(list(g))
+            group_names.append(k)
 
-    grouped_entries = dict((k, v) for k, v in zip(group_names, groups))
+    grouped_entries = OrderedDict((k, v) for k, v in zip(group_names, groups))
     return grouped_entries
 
 
@@ -666,7 +679,6 @@ def render(args):
     known_fmts = ['bib', 'html', 'tex', 'pdf']
 
     publications = filtered_entries(db, args)
-
     fmt = args.fmt
     if fmt == 'bib':
         result = publications.to_string(bib_format='custombibtex')
@@ -720,7 +732,7 @@ def render_to_html(publications, args):
 
     return pybtex.format_from_string(
         publications.to_string(bib_format='custombibtex'),
-        'gerunsrtwithlinks',
+        'myunsrt',
         citations=publications.entries.keys(),
         bib_format='bibtex',
         bib_encoding=None,
@@ -755,8 +767,9 @@ def render_to_tex(publications, args):
                       )
     template = env.get_template(args.template)
     if args.groupby:
+        group_name_dict = plugin_data.get('mapping_%s' % args.groupby, {})
         entries = group_entries_by_key(publications.entries.items(),
-                                       args.groupby)
+                                       args.groupby, group_name_dict)
         if args.bibfile.endswith('.bib'):
             args.bibfile = args.bibfile[:-4]
         latex = template.render({
@@ -841,6 +854,9 @@ def main():
     list_parser.add_argument('-t', '--template', required=False, type=str,
                              default='templates/template.tex',
                              help='Name of the jinja2 LaTeX template')
+    list_parser.add_argument('-s', '--sort-by', required=False, type=str,
+                             default='year',
+                             help='Attribute to sort by')
 
     list_parser.set_defaults(func=list_entries)
 
