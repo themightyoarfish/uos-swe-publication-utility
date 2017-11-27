@@ -25,4 +25,3 @@ Osnabrück University. It can do the following things:
 Source
 ======
 The tool can be found at `Github <https://github.com/themightyoarfish/uos-swe-publication-utility>`_.
-

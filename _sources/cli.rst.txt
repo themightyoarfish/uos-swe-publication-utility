@@ -2,7 +2,8 @@ Before you start
 ================
 
 In the current setup, we have BibTeX files for each group member. They should
-first be assembled into one BibTex file by use of ``bibtool``. This can be done
+first be assembled into one BibTex file by use of ``bibtool`` (this program must
+be installed separately). This can be done
 like this::
 
     bibtool -Aa -d -f short -s -i *.bib -o all/all.bib
@@ -18,7 +19,9 @@ like this::
                              |
                              |-sort ascending
 
-The resulting BibTeX file can then be fed to Publipy.
+The resulting BibTeX file can then be fed to Publipy. The cleaned-up
+publications on which to run the above command can be found at
+`Github <https://github.com/themightyoarfish/uos-swe-publications>`_.
 
 
 Command Line Interface
@@ -116,16 +119,31 @@ The ``list`` subcommand understands these options
     Name of the jinja2 LaTeX template. You can use a custom one if desired.
     Igored unless TeX output is chosen.
 
+.. option::  -s key, --sort key
+
+    BibTeX attribute to sort by (optional, defaults to ``year``)
+
 Examples
 --------
 
+Assuming the database was built first by this command::
+
+    ./publi.py build -d <path-to>/all.bib
+
+the following sections show the most common usage.
+
 HTML
 ^^^^^^^^
-A common usage might me to export in HTML format all entries of a given author,
-grouped by the ``mytype`` attribute. The corresponding command line would look
-like this::
 
-    ./publipy list -f html -p "Mathias Menninghaus" -c -g mytype -o menning
+The most common usage might be to export in HTML format all entries,
+grouped by the ``mytype`` and sorted by year. This can be done like this::
+
+    ./publipy list -f html -c -g mytype -o all -s year
+
+A common usage might be to export all entries of a given author. For this, just
+pass the ``--person`` option additionally.
+
+    ./publipy list -f html -p "Mathias Menninghaus" -c -g mytype -o menning -s year
 
 The result output as ``menning.html`` will look like this:
 
@@ -159,5 +177,5 @@ templates.
 BibTex
 ^^^^^^^
 
-Generating BibTeX is trivial, using `bib` as a format argument will simply
+Generating BibTeX is trivial, using ``bib`` as a format argument will simply
 output a BibTeX file.

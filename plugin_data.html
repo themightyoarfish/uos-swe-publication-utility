@@ -42,6 +42,26 @@
         
   <div class="section" id="module-plugin_data">
 <span id="plugin-data-module"></span><h1>plugin_data module<a class="headerlink" href="#module-plugin_data" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-plugin_data"></span><p>Global data that must be passed to plugins. This is a crutch for circumventing
+the fact that Pybtex (or setuptools plugins) do not allow passing constructor
+arguments to the plugins.</p>
+<dl class="data">
+<dt id="plugin_data.plugin_data">
+<code class="descclassname">plugin_data.</code><code class="descname">plugin_data</code><a class="headerlink" href="#plugin_data.plugin_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>A global <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a> with the following fields</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">label_start</span></code>, <code class="docutils literal"><span class="pre">int</span></code>: Start value for the labels in a section.
+This value can be updated by the labeling plugin so that numbers are
+consecutive over sections.</li>
+<li><code class="docutils literal"><span class="pre">mapping_&lt;key&gt;</span></code>, <code class="xref py py-class docutils literal"><span class="pre">OrderedDict</span></code>: Dictionaries for mapping
+section names (which by default are the different values for the key
+to group on) to different strings. The order of the names sets the
+order in the output.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
 </div>
 
 

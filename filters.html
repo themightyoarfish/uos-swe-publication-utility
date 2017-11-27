@@ -42,20 +42,77 @@
         
   <div class="section" id="module-filters">
 <span id="filters-module"></span><h1>filters module<a class="headerlink" href="#module-filters" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-filters"></span><p>Defines a few helpful functions for constructing filters on BibTeX entry. For
+instance, different filters can be conjoined into a predicate so boilerplate is
+reduced.</p>
 <dl class="function">
 <dt id="filters.get_conjunction_filter">
 <code class="descclassname">filters.</code><code class="descname">get_conjunction_filter</code><span class="sig-paren">(</span><em>*fns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_conjunction_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.get_conjunction_filter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="function">
+<dt>
+<code class="descclassname">filters.</code><code class="descname">get_conjunction_filter</code><span class="sig-paren">(</span><em>*functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_conjunction_filter"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fns</strong> (<em>list</em>) – List of predicates</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A unary function rejecting entries whose which do not satisfy all
+given predicates.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="filters.get_mytype_filter">
 <code class="descclassname">filters.</code><code class="descname">get_mytype_filter</code><span class="sig-paren">(</span><em>mytype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_mytype_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.get_mytype_filter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="function">
+<dt>
+<code class="descclassname">filters.</code><code class="descname">get_mytype_filter</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_mytype_filter"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mytype</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – Name to filter for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A unary function rejecting entries whose <code class="docutils literal"><span class="pre">mytype</span></code> field does
+not equal the given value. The match is case-insensitive.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="filters.get_person_filter">
 <code class="descclassname">filters.</code><code class="descname">get_person_filter</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_person_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.get_person_filter" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="function">
+<dt>
+<code class="descclassname">filters.</code><code class="descname">get_person_filter</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/filters.html#get_person_filter"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – Name to filter for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A unary function rejecting entries whose <code class="docutils literal"><span class="pre">persons</span></code> field does
+not contain the given name. The match must be exact.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </div>
 

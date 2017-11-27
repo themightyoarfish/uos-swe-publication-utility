@@ -13,6 +13,7 @@ Welcome to publipy's documentation!
    intro
    installation
    cli
+   advanced_usage
 
 
 Indices and tables

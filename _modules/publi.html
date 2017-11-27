@@ -52,6 +52,7 @@
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">filters</span> <span class="k">import</span> <span class="n">get_conjunction_filter</span><span class="p">,</span> <span class="n">get_person_filter</span><span class="p">,</span> <span class="n">get_mytype_filter</span>
 <span class="kn">from</span> <span class="nn">pickle</span> <span class="k">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">combinations</span>
@@ -71,7 +72,7 @@
 <span class="n">stopwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;der&#39;</span><span class="p">,</span> <span class="s1">&#39;die&#39;</span><span class="p">,</span> <span class="s1">&#39;das&#39;</span><span class="p">,</span> <span class="s1">&#39;ein&#39;</span><span class="p">,</span> <span class="s1">&#39;eine&#39;</span><span class="p">])</span>
 
 
-<div class="viewcode-block" id="group_entries_by_key"><a class="viewcode-back" href="../publi.html#publi.group_entries_by_key">[docs]</a><span class="k">def</span> <span class="nf">group_entries_by_key</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">sorter</span><span class="p">):</span>
+<div class="viewcode-block" id="group_entries_by_key"><a class="viewcode-back" href="../publi.html#publi.group_entries_by_key">[docs]</a><span class="k">def</span> <span class="nf">group_entries_by_key</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">sorter</span><span class="p">,</span> <span class="n">group_name_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    .. py:function:: group_entries_by_key(entries, sorter)</span>
 
@@ -82,6 +83,7 @@
 <span class="sd">    :param list entries: Iterable of :py:class:`pybtex.database.Entry`\</span>
 <span class="sd">    objects</span>
 <span class="sd">    :param str sorter: Name of the field to sort on</span>
+<span class="sd">    :param dict group_name_dict: Dict to map the group names to something else</span>
 <span class="sd">    :return: Dictionary mapping field value to list of entries with that\</span>
 <span class="sd">    value</span>
 <span class="sd">    :rtype: dict</span>
@@ -98,11 +100,22 @@
     <span class="c1"># multiple times</span>
     <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">group_names</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">sorted_entries</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">group_sorter</span><span class="p">):</span>
-        <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
-        <span class="n">group_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">group_name_dict</span><span class="p">:</span>
+        <span class="c1"># for some unknown reason we need to turn the individual group iterators</span>
+        <span class="c1"># into lists immediately, it seems to be impossible to have a dict of</span>
+        <span class="c1"># name -&gt; iterator. The iterators are all empty then (wtf)</span>
+        <span class="n">group_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">g</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">sorted_entries</span><span class="p">,</span>
+                                                           <span class="n">key</span><span class="o">=</span><span class="n">group_sorter</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="n">group_name_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">group_dict</span><span class="p">[</span><span class="n">value</span><span class="p">])</span>
+            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+            <span class="n">group_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">sorted_entries</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">group_sorter</span><span class="p">):</span>
+            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
+            <span class="n">group_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
 
-    <span class="n">grouped_entries</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">group_names</span><span class="p">,</span> <span class="n">groups</span><span class="p">))</span>
+    <span class="n">grouped_entries</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">group_names</span><span class="p">,</span> <span class="n">groups</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">grouped_entries</span></div>
 
 
@@ -709,7 +722,6 @@
     <span class="n">known_fmts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bib&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;tex&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span>
 
     <span class="n">publications</span> <span class="o">=</span> <span class="n">filtered_entries</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-
     <span class="n">fmt</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">fmt</span>
     <span class="k">if</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s1">&#39;bib&#39;</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">publications</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">)</span>
@@ -763,7 +775,7 @@
 
     <span class="k">return</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">format_from_string</span><span class="p">(</span>
         <span class="n">publications</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;custombibtex&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;gerunsrtwithlinks&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;myunsrt&#39;</span><span class="p">,</span>
         <span class="n">citations</span><span class="o">=</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
         <span class="n">bib_format</span><span class="o">=</span><span class="s1">&#39;bibtex&#39;</span><span class="p">,</span>
         <span class="n">bib_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -798,8 +810,9 @@
                       <span class="p">)</span>
     <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">:</span>
+        <span class="n">group_name_dict</span> <span class="o">=</span> <span class="n">plugin_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mapping_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">,</span> <span class="p">{})</span>
         <span class="n">entries</span> <span class="o">=</span> <span class="n">group_entries_by_key</span><span class="p">(</span><span class="n">publications</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
-                                       <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">)</span>
+                                       <span class="n">args</span><span class="o">.</span><span class="n">groupby</span><span class="p">,</span> <span class="n">group_name_dict</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bib&#39;</span><span class="p">):</span>
             <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">bibfile</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
         <span class="n">latex</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">({</span>
@@ -884,6 +897,9 @@
     <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-t&#39;</span><span class="p">,</span> <span class="s1">&#39;--template&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
                              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;templates/template.tex&#39;</span><span class="p">,</span>
                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the jinja2 LaTeX template&#39;</span><span class="p">)</span>
+    <span class="n">list_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="s1">&#39;--sort-by&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Attribute to sort by&#39;</span><span class="p">)</span>
 
     <span class="n">list_parser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">list_entries</span><span class="p">)</span>
 

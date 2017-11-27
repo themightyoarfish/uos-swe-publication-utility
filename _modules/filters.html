@@ -41,11 +41,27 @@
         
         
   <h1>Source code for filters</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pybtex.database</span> <span class="k">import</span> <span class="n">Person</span>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">.. module:: filters</span>
+
+<span class="sd">Defines a few helpful functions for constructing filters on BibTeX entry. For</span>
+<span class="sd">instance, different filters can be conjoined into a predicate so boilerplate is</span>
+<span class="sd">reduced.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">pybtex.database</span> <span class="k">import</span> <span class="n">Person</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 
 
 <div class="viewcode-block" id="get_person_filter"><a class="viewcode-back" href="../filters.html#filters.get_person_filter">[docs]</a><span class="k">def</span> <span class="nf">get_person_filter</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    .. py:function:: get_person_filter(name)</span>
+
+<span class="sd">    :param string name: Name to filter for</span>
+<span class="sd">    :return: A unary function rejecting entries whose ``persons`` field does</span>
+<span class="sd">             not contain the given name. The match must be exact.</span>
+<span class="sd">    :rtype: function</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">filter_person</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
         <span class="n">people</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">persons</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">people</span><span class="p">):</span>
@@ -57,6 +73,14 @@
 
 
 <div class="viewcode-block" id="get_mytype_filter"><a class="viewcode-back" href="../filters.html#filters.get_mytype_filter">[docs]</a><span class="k">def</span> <span class="nf">get_mytype_filter</span><span class="p">(</span><span class="n">mytype</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    .. py:function:: get_mytype_filter(name)</span>
+
+<span class="sd">    :param string mytype: Name to filter for</span>
+<span class="sd">    :return: A unary function rejecting entries whose ``mytype`` field does</span>
+<span class="sd">             not equal the given value. The match is case-insensitive.</span>
+<span class="sd">    :rtype: function</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">filter_mytype</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;mytype&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -66,6 +90,14 @@
 
 
 <div class="viewcode-block" id="get_conjunction_filter"><a class="viewcode-back" href="../filters.html#filters.get_conjunction_filter">[docs]</a><span class="k">def</span> <span class="nf">get_conjunction_filter</span><span class="p">(</span><span class="o">*</span><span class="n">fns</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    .. py:function:: get_conjunction_filter(*functions)</span>
+
+<span class="sd">    :param list fns: List of predicates</span>
+<span class="sd">    :return: A unary function rejecting entries whose which do not satisfy all</span>
+<span class="sd">             given predicates.</span>
+<span class="sd">    :rtype: function</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">logical_and</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fns</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>

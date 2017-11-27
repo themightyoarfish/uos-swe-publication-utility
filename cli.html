@@ -46,7 +46,8 @@
   <div class="section" id="before-you-start">
 <h1>Before you start<a class="headerlink" href="#before-you-start" title="Permalink to this headline">¶</a></h1>
 <p>In the current setup, we have BibTeX files for each group member. They should
-first be assembled into one BibTex file by use of <code class="docutils literal"><span class="pre">bibtool</span></code>. This can be done
+first be assembled into one BibTex file by use of <code class="docutils literal"><span class="pre">bibtool</span></code> (this program must
+be installed separately). This can be done
 like this:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">bibtool</span> <span class="o">-</span><span class="n">Aa</span> <span class="o">-</span><span class="n">d</span> <span class="o">-</span><span class="n">f</span> <span class="n">short</span> <span class="o">-</span><span class="n">s</span> <span class="o">-</span><span class="n">i</span> <span class="o">*.</span><span class="n">bib</span> <span class="o">-</span><span class="n">o</span> <span class="nb">all</span><span class="o">/</span><span class="nb">all</span><span class="o">.</span><span class="n">bib</span>
         <span class="o">^</span>    <span class="o">^</span>  <span class="o">^</span>        <span class="o">^</span>  <span class="o">^</span>
@@ -62,7 +63,9 @@ like this:</p>
                          <span class="o">|-</span><span class="n">sort</span> <span class="n">ascending</span>
 </pre></div>
 </div>
-<p>The resulting BibTeX file can then be fed to Publipy.</p>
+<p>The resulting BibTeX file can then be fed to Publipy. The cleaned-up
+publications on which to run the above command can be found at
+<a class="reference external" href="https://github.com/themightyoarfish/uos-swe-publications">Github</a>.</p>
 </div>
 <div class="section" id="command-line-interface">
 <h1>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h1>
@@ -174,17 +177,31 @@ generated separately (e.g. by use of <code class="docutils literal"><span class=
 Igored unless TeX output is chosen.</p>
 </dd></dl>
 
+<dl class="option">
+<dt id="cmdoption-s">
+<code class="descname">-s</code><code class="descclassname"> key</code><code class="descclassname">, </code><code class="descname">--sort</code><code class="descclassname"> key</code><a class="headerlink" href="#cmdoption-s" title="Permalink to this definition">¶</a></dt>
+<dd><p>BibTeX attribute to sort by (optional, defaults to <code class="docutils literal"><span class="pre">year</span></code>)</p>
+</dd></dl>
+
 </div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="html">
-<h3>HTML<a class="headerlink" href="#html" title="Permalink to this headline">¶</a></h3>
-<p>A common usage might me to export in HTML format all entries of a given author,
-grouped by the <code class="docutils literal"><span class="pre">mytype</span></code> attribute. The corresponding command line would look
-like this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">publipy</span> <span class="nb">list</span> <span class="o">-</span><span class="n">f</span> <span class="n">html</span> <span class="o">-</span><span class="n">p</span> <span class="s2">&quot;Mathias Menninghaus&quot;</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">g</span> <span class="n">mytype</span> <span class="o">-</span><span class="n">o</span> <span class="n">menning</span>
+<p>Assuming the database was built first by this command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">publi</span><span class="o">.</span><span class="n">py</span> <span class="n">build</span> <span class="o">-</span><span class="n">d</span> <span class="o">&lt;</span><span class="n">path</span><span class="o">-</span><span class="n">to</span><span class="o">&gt;/</span><span class="nb">all</span><span class="o">.</span><span class="n">bib</span>
 </pre></div>
 </div>
+<p>the following sections show the most common usage.</p>
+<div class="section" id="html">
+<h3>HTML<a class="headerlink" href="#html" title="Permalink to this headline">¶</a></h3>
+<p>The most common usage might be to export in HTML format all entries,
+grouped by the <code class="docutils literal"><span class="pre">mytype</span></code> and sorted by year. This can be done like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">publipy</span> <span class="nb">list</span> <span class="o">-</span><span class="n">f</span> <span class="n">html</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">g</span> <span class="n">mytype</span> <span class="o">-</span><span class="n">o</span> <span class="nb">all</span> <span class="o">-</span><span class="n">s</span> <span class="n">year</span>
+</pre></div>
+</div>
+<p>A common usage might be to export all entries of a given author. For this, just
+pass the <code class="docutils literal"><span class="pre">--person</span></code> option additionally.</p>
+<blockquote>
+<div>./publipy list -f html -p “Mathias Menninghaus” -c -g mytype -o menning -s year</div></blockquote>
 <p>The result output as <code class="docutils literal"><span class="pre">menning.html</span></code> will look like this:</p>
 <img alt="_images/sample_output.png" class="align-center" src="_images/sample_output.png" />
 </div>
@@ -218,7 +235,7 @@ templates.</p>
 </div>
 <div class="section" id="bibtex">
 <h3>BibTex<a class="headerlink" href="#bibtex" title="Permalink to this headline">¶</a></h3>
-<p>Generating BibTeX is trivial, using <cite>bib</cite> as a format argument will simply
+<p>Generating BibTeX is trivial, using <code class="docutils literal"><span class="pre">bib</span></code> as a format argument will simply
 output a BibTeX file.</p>
 </div>
 </div>

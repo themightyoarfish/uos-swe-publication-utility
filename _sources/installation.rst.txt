@@ -13,7 +13,7 @@ library for python. Pybtex supports `Setuptools plugins <https://setuptools.read
 
 Before running Pybtex, the plugins must be installed by::
 
-    sudo python3 setup.py develop
+    sudo python3 setup.py install
 
 Furthermore, all necessary requirements should be installed via::
 
