@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+SPHINXOPTS    = -n
 SPHINXBUILD   = python3 -msphinx
 SPHINXPROJ    = publipy
 SOURCEDIR     = source

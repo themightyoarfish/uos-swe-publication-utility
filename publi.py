@@ -179,8 +179,7 @@ def disambiguate(key, keyset):
 
 
 class PublicationDatabase(object):
-    """ Class to hold information about publication lists
-    """
+    """ Class to hold information about publication lists"""
 
     @classmethod
     def default_comparator(cls, item1, item2):
@@ -230,6 +229,8 @@ class PublicationDatabase(object):
         :param str prefix: Folder prefix for saving/loading individual\
             bib files and pdfs
         """
+        self.database_file = None
+        self.prefix = None
         if database_file:
             self.database_file = database_file
             self.prefix = Path(prefix) if prefix else Path(database_file).parent
@@ -264,13 +265,13 @@ class PublicationDatabase(object):
 
     def save(self):
         """
-         Serialize self to pickled file named **db.pckl** for caching and
-         update the :py:attr:`database_file` with all entries. Also,
-         directories **abstract**, **pdf** and **bib** are created under
-         :py:attr:`prefix` which are filled with one file per key each –
-         one for a BibTeX file with the single entry, one text file for
-         the abstract (if present in the entry) and one pdf file (if a
-         pdf named like the entry's key was found in :py:attr:`pdf_dir`)
+         Serialize self to pickled file named ``db.pckl`` for caching and update the
+         :py:attr:`PublicationDatabase.database_file` with all entries. Also, directories
+         ``abstract``, ``pdf`` and ``bib`` are created under :py:attr:`PublicationDatabase.prefix`
+         which are filled with one file per key each – one for a BibTeX file with the single entry,
+         one text file for the abstract (if present in the entry) and one pdf file (if a pdf named
+         like the entry's key was found in the ``pdf_dir`` parameter passed to
+         :meth:`PublicationDatabase.populate()`)
         """
         with open('db.pckl', mode='wb') as f:
             dump(self.publications, f)
@@ -305,7 +306,7 @@ class PublicationDatabase(object):
 
     def load(self):
         """
-        Deserialize self from pickled file named **db.pckl**.
+        Deserialize self from pickled file named ``db.pckl``.
         """
         with open('db.pckl', mode='rb') as f:
             self.publications = load(f)
@@ -313,9 +314,9 @@ class PublicationDatabase(object):
     def populate(self, database_file, pdf_dir):
         """
         Collect all bibdata from all files into one big-ass database (self),
-        rekeying the entries.  This method will also set *publipy_biburl*,
-        *publipy_abstracturl*, and *publipy_pdfurl* attributes on the entries.
-        Pdf files are copied to :py:attr:`pdf_dir` **/pdf**.
+        rekeying the entries.  This method will also set ``publipy_biburl``,
+        ``publipy_abstracturl``, and ``publipy_pdfurl`` attributes on the entries.
+        Pdf files are copied to ``pdf_dir/pdf``.
 
         :param str database_file: File containing all bibliography data
         :param str pdf_dir: Directory filled with pdfs named by their\
@@ -612,7 +613,7 @@ def render(args):
     :param args: Command line arguments
     :type args: :py:class:`argparse.Namespace`
     :return: Rendered database
-    :rtype: result
+    :rtype: str
     :raises: ValueError if unknown format passed
     """
     db = PublicationDatabase()
