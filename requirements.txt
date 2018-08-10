@@ -1,3 +1,5 @@
 pybtex==0.21
 PyPDF2==1.26
 unidecode==0.4.21
+pylatexenc
+python-dateutil
