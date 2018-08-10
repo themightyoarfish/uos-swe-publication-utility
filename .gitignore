@@ -331,3 +331,11 @@ TSWLatexianTemp*
 # expex forward references with \gathertags
 *-tags.tex
 unicodeit.py
+
+.DS_Store
+.buildinfo
+abstracts
+all.*
+bib
+latex
+tex
