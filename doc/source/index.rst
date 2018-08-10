@@ -14,6 +14,7 @@ Welcome to publipy's documentation!
    installation
    cli
    advanced_usage
+   modules
 
 
 Indices and tables

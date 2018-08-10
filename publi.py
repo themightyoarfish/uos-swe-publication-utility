@@ -31,8 +31,6 @@ stopwords = set(['the', 'a', 'of', 'in', 'der', 'die', 'das', 'ein', 'eine'])
 
 def group_entries_by_key(entries, sorter, group_name_dict=None):
     """
-    .. py:function:: group_entries_by_key(entries, sorter)
-
     Sort set of entries into groups depending on the value of `sorter`.
     Returns :py:class:`dict` where keys are the different values of the
     `sorter` field occurring across the set of entries.
@@ -78,8 +76,6 @@ def group_entries_by_key(entries, sorter, group_name_dict=None):
 
 def make_plain(text):
     """
-    .. py:function:: make_plain(text)
-
     Detexify and asciify text
 
     :param str text: Text to make plain
@@ -92,8 +88,6 @@ def make_plain(text):
 
 def generate_key_swe(entry):
     """
-    .. py:function:: generate_key_swe(entry)
-
     Create a new bibtex key for the given entry in the format desired by the
     group leader. The format is ``<first author>:<first title word>:yy``.
     Stop words (non-significant ones such as articles) are ignored.
@@ -127,8 +121,6 @@ def generate_key_swe(entry):
 
 def generate_key_bibtool(entry):
     """
-    .. py::function generate_key_bibtool(entry)
-
     Generate a key like bibtool would create with the following options
 
     * ``key.base=lower``
@@ -156,8 +148,6 @@ def generate_key_bibtool(entry):
 
 def generate_suffix(key, keyset, current_suffix=''):
     """
-    .. py:function:: generate_suffix(key, keyset[, current_suffix])
-
     Generate a key suffix for disambiguation. The resulting key will be\
         unique with respect to `keyset`. Works by appending successively\
         more alphanumeric\
@@ -177,8 +167,6 @@ def generate_suffix(key, keyset, current_suffix=''):
 
 def disambiguate(key, keyset):
     """
-    .. py:function:: disambiguate(key, keyset)
-
     Disambiguate key over set of keys by successively appending more
     alphanumeric numbers.
 
@@ -191,17 +179,12 @@ def disambiguate(key, keyset):
 
 
 class PublicationDatabase(object):
-    """
-    .. py:class:: PublicationDatabase([database_file[, pdf_dir[, prefix]]])
-
-    Class to hold information about publication lists
+    """ Class to hold information about publication lists
     """
 
     @classmethod
     def default_comparator(cls, item1, item2):
         """
-        .. py:function:: default_comparator(cls, item1, item2)
-
         Default comparator for bibliograpyh items.This function will first
         compare the keys and then check whether both entries have a title
         field and if so, check whether their values are similar according to
@@ -239,9 +222,6 @@ class PublicationDatabase(object):
 
     def __init__(self, database_file=None, pdf_dir=None, prefix=None):
         """
-
-        .. py:method:: __init__([database_file[, pdf_dir[, prefix]]])
-
         Create a database by reading all the bibliography data in a BibTeX
         file.
 
@@ -260,10 +240,7 @@ class PublicationDatabase(object):
 
     def delete(self, key):
         """
-        .. py:method:: delete(key)
-
-        Remove item from bilbiography. This operation is linear, since the\
-        underlying :py:class:`pybtex.utils.OrderedCaseInsensitiveDict` does\
+        .. py:class:`pybtex.utils.OrderedCaseInsensitiveDict` does\
         not support deletion. This will also remove the bibfile associated\
         with `key`.
 
@@ -287,8 +264,6 @@ class PublicationDatabase(object):
 
     def save(self):
         """
-        .. py:method:: save
-
          Serialize self to pickled file named **db.pckl** for caching and
          update the :py:attr:`database_file` with all entries. Also,
          directories **abstract**, **pdf** and **bib** are created under
@@ -330,8 +305,6 @@ class PublicationDatabase(object):
 
     def load(self):
         """
-        .. py:method:: load
-
         Deserialize self from pickled file named **db.pckl**.
         """
         with open('db.pckl', mode='rb') as f:
@@ -339,8 +312,6 @@ class PublicationDatabase(object):
 
     def populate(self, database_file, pdf_dir):
         """
-        .. py:method:: populate(database_file, pdf_dir)
-
         Collect all bibdata from all files into one big-ass database (self),
         rekeying the entries.  This method will also set *publipy_biburl*,
         *publipy_abstracturl*, and *publipy_pdfurl* attributes on the entries.
@@ -379,8 +350,6 @@ class PublicationDatabase(object):
 
     def find_duplicates(self, comparator=None):
         """
-        .. py:method:: find_duplicates([comparator])
-
         Find suspected duplicates.
 
         :param comparator: binary function to determine whether two bib items\
@@ -404,8 +373,6 @@ class PublicationDatabase(object):
 
     def add_entry(self, key, entry):
         """
-        .. py:method:: add_entry(key, entry)
-
         Add an entry to the database.
 
         :param str key: Key of the new entry. Will be disambiguated before\
@@ -427,8 +394,6 @@ class PublicationDatabase(object):
 
     def add_bibdata(self, entries):
         """
-        .. py::method:: add_bibdata(entries)
-
         Add several entries to the database.
 
         :param entries: Entries to add
@@ -447,8 +412,6 @@ class PublicationDatabase(object):
 
     def iter_entries(self, predicate=None):
         """
-        .. py:method:: iter_entries([predicate])
-
         Create and iterator for filtering entries.
 
         :param predicate: Filter function to use. If ``None``, all entries will\
@@ -462,8 +425,6 @@ class PublicationDatabase(object):
 
     def publications_for_year(self, min_year, max_year):
         """
-        .. py:method:: publications_for_year(min_year, max_year)
-
         Get all publications between two years (inclusive)
 
         :param min_year: Minimum allowed year
@@ -486,8 +447,6 @@ class PublicationDatabase(object):
 
     def publications_for_type(self, type):
         """
-        .. py:method:: publications_for_type(type)
-
         Get all publications of the given kind (book, article, inproceedings..).
 
         :param str type: Desired type
@@ -499,8 +458,6 @@ class PublicationDatabase(object):
 
     def publications_for_member(self, member):
         """
-        .. py:method:: publications_for_member(member)
-
         Get all publications the given person is involved in.
         **Currently not implemented**
 
@@ -513,8 +470,6 @@ class PublicationDatabase(object):
 
 def build(args):
     """
-    .. py:function:: build(args)
-
     Build and save a :py:class:`PublicationDatabase` from the arguments passed.
 
     :param args: :py:class:`argparse.Namespace` object obtained via\
@@ -539,8 +494,6 @@ def build(args):
 
 def add(args):
     """
-    .. py:function:: add(args)
-
     Add item(s) to the database. Uses the ``entries`` field from the arguments.
 
     :param args: Command line arguments obtained via\
@@ -556,8 +509,6 @@ def add(args):
 
 def read_bibfile(filename):
     """
-    .. py:function:: read_bibfile(filename)
-
     Parse :py:class:`pybtex.database.BibliographyData` from BibTeX file.
 
     :param str filename: Name of the BibTeX file
@@ -571,8 +522,6 @@ def read_bibfile(filename):
 
 def check_validity(entry):
     """
-    .. py:function:: check_validity(entry)
-
     Currently unimplemented.
     """
     # TODO: Check if entry is valid by trying to render it
@@ -581,8 +530,6 @@ def check_validity(entry):
 
 def print_all_authors():
     """
-    .. py:function:: print_all_authors
-
     Print all persons found in the database. Can be authors or editors (in\
     spite of the name)
     """
@@ -604,8 +551,6 @@ def print_all_authors():
 
 def filtered_entries(database, args):
     """
-    .. py:function:: filtered_entries(database, args)
-
     Get a :py:class:`PublicationDatabase` containing only selected entries.
     Will read out the ``person``, ``expr``, and ``mytype`` filters from the
     arguments.  Only entries meeting all criteria are selected.
@@ -650,8 +595,6 @@ def filtered_entries(database, args):
 
 def write_output(content, fname):
     """
-    .. py:function:: write_output(content, fname)
-
     Convenience for writing string to utf8-encoded file.
 
     :param str content: Text to write
@@ -663,8 +606,6 @@ def write_output(content, fname):
 
 def render(args):
     """
-    .. py:function:: render(args)
-
     Render publication database into various formats. Supported are ``bib``,
     ``html``, ``tex`` and ``pdf`` (currently unimplemented)
 
@@ -696,8 +637,6 @@ def render(args):
 
 def list_entries(args):
     """
-    .. py:function:: list_entries(args)
-
     Render database to format and write to file. See :py:func:`render`
 
     :param args: Command line arguments
@@ -713,8 +652,6 @@ def list_entries(args):
 
 def render_to_html(publications, args):
     """
-    .. py:function:: render_to_html(publications, args)
-
     Render publication database to html. Optionally complete or as embeddable
     fragment.
 
@@ -743,8 +680,6 @@ def render_to_html(publications, args):
 
 def render_to_tex(publications, args):
     """
-    .. py:function:: render_to_tex(publications, args)
-
     Render publication database to latex. Optionally complete or as embeddable
     fragment.
 
@@ -788,8 +723,6 @@ def render_to_tex(publications, args):
 
 def main():
     """
-    .. py:function:: main
-
     Process user commands. The program has several subcommands. Run with
     `--help` for full details.
 
