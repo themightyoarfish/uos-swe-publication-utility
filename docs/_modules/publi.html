@@ -213,8 +213,7 @@
 
 
 <div class="viewcode-block" id="PublicationDatabase"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase">[docs]</a><span class="k">class</span> <span class="nc">PublicationDatabase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Class to hold information about publication lists</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot; Class to hold information about publication lists&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="PublicationDatabase.default_comparator"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.default_comparator">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">default_comparator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">item2</span><span class="p">):</span>
@@ -264,6 +263,8 @@
 <span class="sd">        :param str prefix: Folder prefix for saving/loading individual\</span>
 <span class="sd">            bib files and pdfs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">database_file</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">database_file</span> <span class="o">=</span> <span class="n">database_file</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="n">database_file</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
@@ -298,13 +299,13 @@
 
 <div class="viewcode-block" id="PublicationDatabase.save"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         Serialize self to pickled file named **db.pckl** for caching and</span>
-<span class="sd">         update the :py:attr:`database_file` with all entries. Also,</span>
-<span class="sd">         directories **abstract**, **pdf** and **bib** are created under</span>
-<span class="sd">         :py:attr:`prefix` which are filled with one file per key each –</span>
-<span class="sd">         one for a BibTeX file with the single entry, one text file for</span>
-<span class="sd">         the abstract (if present in the entry) and one pdf file (if a</span>
-<span class="sd">         pdf named like the entry&#39;s key was found in :py:attr:`pdf_dir`)</span>
+<span class="sd">         Serialize self to pickled file named ``db.pckl`` for caching and update the</span>
+<span class="sd">         :py:attr:`PublicationDatabase.database_file` with all entries. Also, directories</span>
+<span class="sd">         ``abstract``, ``pdf`` and ``bib`` are created under :py:attr:`PublicationDatabase.prefix`</span>
+<span class="sd">         which are filled with one file per key each – one for a BibTeX file with the single entry,</span>
+<span class="sd">         one text file for the abstract (if present in the entry) and one pdf file (if a pdf named</span>
+<span class="sd">         like the entry&#39;s key was found in the ``pdf_dir`` parameter passed to</span>
+<span class="sd">         :meth:`PublicationDatabase.populate()`)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;db.pckl&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">publications</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
@@ -339,7 +340,7 @@
 
 <div class="viewcode-block" id="PublicationDatabase.load"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deserialize self from pickled file named **db.pckl**.</span>
+<span class="sd">        Deserialize self from pickled file named ``db.pckl``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;db.pckl&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">publications</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
@@ -347,9 +348,9 @@
 <div class="viewcode-block" id="PublicationDatabase.populate"><a class="viewcode-back" href="../publi.html#publi.PublicationDatabase.populate">[docs]</a>    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_file</span><span class="p">,</span> <span class="n">pdf_dir</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Collect all bibdata from all files into one big-ass database (self),</span>
-<span class="sd">        rekeying the entries.  This method will also set *publipy_biburl*,</span>
-<span class="sd">        *publipy_abstracturl*, and *publipy_pdfurl* attributes on the entries.</span>
-<span class="sd">        Pdf files are copied to :py:attr:`pdf_dir` **/pdf**.</span>
+<span class="sd">        rekeying the entries.  This method will also set ``publipy_biburl``,</span>
+<span class="sd">        ``publipy_abstracturl``, and ``publipy_pdfurl`` attributes on the entries.</span>
+<span class="sd">        Pdf files are copied to ``pdf_dir/pdf``.</span>
 
 <span class="sd">        :param str database_file: File containing all bibliography data</span>
 <span class="sd">        :param str pdf_dir: Directory filled with pdfs named by their\</span>
@@ -646,7 +647,7 @@
 <span class="sd">    :param args: Command line arguments</span>
 <span class="sd">    :type args: :py:class:`argparse.Namespace`</span>
 <span class="sd">    :return: Rendered database</span>
-<span class="sd">    :rtype: result</span>
+<span class="sd">    :rtype: str</span>
 <span class="sd">    :raises: ValueError if unknown format passed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">db</span> <span class="o">=</span> <span class="n">PublicationDatabase</span><span class="p">()</span>

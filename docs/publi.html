@@ -154,16 +154,16 @@ is assumed if <cite>r&gt;=0.8</cite></p>
 <dl class="method">
 <dt id="publi.PublicationDatabase.load">
 <code class="descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/publi.html#PublicationDatabase.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#publi.PublicationDatabase.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deserialize self from pickled file named <strong>db.pckl</strong>.</p>
+<dd><p>Deserialize self from pickled file named <code class="docutils literal notranslate"><span class="pre">db.pckl</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="publi.PublicationDatabase.populate">
 <code class="descname">populate</code><span class="sig-paren">(</span><em>database_file</em>, <em>pdf_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/publi.html#PublicationDatabase.populate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#publi.PublicationDatabase.populate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Collect all bibdata from all files into one big-ass database (self),
-rekeying the entries.  This method will also set <em>publipy_biburl</em>,
-<em>publipy_abstracturl</em>, and <em>publipy_pdfurl</em> attributes on the entries.
-Pdf files are copied to <code class="xref py py-attr docutils literal notranslate"><span class="pre">pdf_dir</span></code> <strong>/pdf</strong>.</p>
+rekeying the entries.  This method will also set <code class="docutils literal notranslate"><span class="pre">publipy_biburl</span></code>,
+<code class="docutils literal notranslate"><span class="pre">publipy_abstracturl</span></code>, and <code class="docutils literal notranslate"><span class="pre">publipy_pdfurl</span></code> attributes on the entries.
+Pdf files are copied to <code class="docutils literal notranslate"><span class="pre">pdf_dir/pdf</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -238,13 +238,13 @@ Pdf files are copied to <code class="xref py py-attr docutils literal notranslat
 <dl class="method">
 <dt id="publi.PublicationDatabase.save">
 <code class="descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/publi.html#PublicationDatabase.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#publi.PublicationDatabase.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Serialize self to pickled file named <strong>db.pckl</strong> for caching and
-update the <code class="xref py py-attr docutils literal notranslate"><span class="pre">database_file</span></code> with all entries. Also,
-directories <strong>abstract</strong>, <strong>pdf</strong> and <strong>bib</strong> are created under
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">prefix</span></code> which are filled with one file per key each –
-one for a BibTeX file with the single entry, one text file for
-the abstract (if present in the entry) and one pdf file (if a
-pdf named like the entry’s key was found in <code class="xref py py-attr docutils literal notranslate"><span class="pre">pdf_dir</span></code>)</p>
+<dd><p>Serialize self to pickled file named <code class="docutils literal notranslate"><span class="pre">db.pckl</span></code> for caching and update the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">PublicationDatabase.database_file</span></code> with all entries. Also, directories
+<code class="docutils literal notranslate"><span class="pre">abstract</span></code>, <code class="docutils literal notranslate"><span class="pre">pdf</span></code> and <code class="docutils literal notranslate"><span class="pre">bib</span></code> are created under <code class="xref py py-attr docutils literal notranslate"><span class="pre">PublicationDatabase.prefix</span></code>
+which are filled with one file per key each – one for a BibTeX file with the single entry,
+one text file for the abstract (if present in the entry) and one pdf file (if a pdf named
+like the entry’s key was found in the <code class="docutils literal notranslate"><span class="pre">pdf_dir</span></code> parameter passed to
+<a class="reference internal" href="#publi.PublicationDatabase.populate" title="publi.PublicationDatabase.populate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PublicationDatabase.populate()</span></code></a>)</p>
 </dd></dl>
 
 </dd></dl>
@@ -482,7 +482,7 @@ Returns <a class="reference external" href="https://docs.python.org/3/library/st
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Rendered database</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">result</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">ValueError if unknown format passed</td>
 </tr>

@@ -38,13 +38,12 @@
 <span class="sd">reduced.</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
-<span class="kn">from</span> <span class="nn">pybtex.database</span> <span class="k">import</span> <span class="n">Person</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 
 
 <div class="viewcode-block" id="get_person_filter"><a class="viewcode-back" href="../filters.html#filters.get_person_filter">[docs]</a><span class="k">def</span> <span class="nf">get_person_filter</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    :param string name: Name to filter for</span>
+<span class="sd">    :param str name: Name to filter for</span>
 <span class="sd">    :return: A unary function rejecting entries whose ``persons`` field does</span>
 <span class="sd">             not contain the given name. The match must be exact.</span>
 <span class="sd">    :rtype: function</span>
@@ -61,7 +60,7 @@
 
 <div class="viewcode-block" id="get_mytype_filter"><a class="viewcode-back" href="../filters.html#filters.get_mytype_filter">[docs]</a><span class="k">def</span> <span class="nf">get_mytype_filter</span><span class="p">(</span><span class="n">mytype</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    :param string mytype: Name to filter for</span>
+<span class="sd">    :param str mytype: Name to filter for</span>
 <span class="sd">    :return: A unary function rejecting entries whose ``mytype`` field does</span>
 <span class="sd">             not equal the given value. The match is case-insensitive.</span>
 <span class="sd">    :rtype: function</span>
@@ -76,7 +75,7 @@
 
 <div class="viewcode-block" id="get_conjunction_filter"><a class="viewcode-back" href="../filters.html#filters.get_conjunction_filter">[docs]</a><span class="k">def</span> <span class="nf">get_conjunction_filter</span><span class="p">(</span><span class="o">*</span><span class="n">fns</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    :param list fns: List of predicates</span>
+<span class="sd">    :param list(function) fns: List of predicates</span>
 <span class="sd">    :return: A unary function rejecting entries whose which do not satisfy all</span>
 <span class="sd">             given predicates.</span>
 <span class="sd">    :rtype: function</span>
