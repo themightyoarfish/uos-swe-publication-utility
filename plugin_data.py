@@ -1,6 +1,4 @@
 '''
-.. module:: plugin_data
-
 Global data that must be passed to plugins. This is a crutch for circumventing
 the fact that Pybtex (or setuptools plugins) do not allow passing constructor
 arguments to the plugins.

@@ -1,6 +1,7 @@
 import pybtex
 from pybtex.backends.html import Backend as HTMLBackend
 from plugin_data import plugin_data
+import os
 
 PROLOGUE = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
@@ -15,7 +16,8 @@ PROLOGUE = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <dl>
 '''
 
-with open('publications.css') as css_file:
+fname = os.path.join(os.path.dirname(__file__), '../publications.css')
+with open(fname) as css_file:
     STYLESHEET = css_file.read()
 
 

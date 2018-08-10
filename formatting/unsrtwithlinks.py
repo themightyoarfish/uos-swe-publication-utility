@@ -30,7 +30,7 @@ class Style(UnsrtStyle):
             return formatted_title
 
     def format_entries(self, entries):
-        """Override for appending links before yielding FormattedEntries.
+        """Override for appending links before yielding ``FormattedEntries``.
         :param entries: `BibliographyData` entries
         :type entries:  BibliographyData
         """
