@@ -1,0 +1,86 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Advanced Usage &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Documentation" href="modules.html" />
+    <link rel="prev" title="Before you start" href="cli.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>Advanced Usage</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="cli.html">Before you start</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="modules.html">API Documentation</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="advanced-usage">
+<h1>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="changing-section-titles">
+<h2>Changing section titles<a class="headerlink" href="#changing-section-titles" title="Permalink to this headline">¶</a></h2>
+<p>If you would like to group by an attribute, but not use the attribute’s
+different values as section titles in the output, you may edit
+<a class="reference internal" href="plugin_data.html#module-plugin_data" title="plugin_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plugin_data</span></code></a> to include a <code class="docutils literal notranslate"><span class="pre">mapping_&lt;key&gt;</span></code> for your grouping attribute:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">plugin_data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">...</span>
+    <span class="c1"># provide key -&gt; name mappings and an order</span>
+    <span class="s1">&#39;mapping_mytype&#39;</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s1">&#39;JOURNAL&#39;</span><span class="p">,</span> <span class="s1">&#39;Journals&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;CONFERENCE&#39;</span><span class="p">,</span> <span class="s1">&#39;Conferences&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;WORKSHOP&#39;</span><span class="p">,</span> <span class="s1">&#39;Workshops&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;EDITEDVOLUME&#39;</span><span class="p">,</span> <span class="s1">&#39;Edited Volumes&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;BOOK&#39;</span><span class="p">,</span> <span class="s1">&#39;Books&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;CHAPTER&#39;</span><span class="p">,</span> <span class="s1">&#39;Book chapters&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;THESIS&#39;</span><span class="p">,</span> <span class="s1">&#39;Theses&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;TECHNICALREPORT&#39;</span><span class="p">,</span> <span class="s1">&#39;Technical reports&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;OTHER&#39;</span><span class="p">,</span> <span class="s1">&#39;Other&#39;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="s1">&#39;n/a&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">)</span>
+                                <span class="p">])</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="cli.html">Before you start</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="modules.html">API Documentation</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Universität Osnabrück.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
+    </div>
+  </body>
+</html>

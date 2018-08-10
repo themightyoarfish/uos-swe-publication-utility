@@ -1,0 +1,83 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>plugin_data module &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="publi module" href="publi.html" />
+    <link rel="prev" title="pdf_util module" href="pdf_util.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>plugin_data module</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="pdf_util.html">pdf_util module</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="publi.html">publi module</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-plugin_data">
+<span id="plugin-data-module"></span><h1>plugin_data module<a class="headerlink" href="#module-plugin_data" title="Permalink to this headline">¶</a></h1>
+<p>Global data that must be passed to plugins. This is a crutch for circumventing
+the fact that Pybtex (or setuptools plugins) do not allow passing constructor
+arguments to the plugins.</p>
+<dl class="data">
+<dt id="plugin_data.plugin_data">
+<code class="descclassname">plugin_data.</code><code class="descname">plugin_data</code><a class="headerlink" href="#plugin_data.plugin_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>A global <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> with the following fields</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">label_start</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>: Start value for the labels in a section.
+This value can be updated by the labeling plugin so that numbers are
+consecutive over sections.</li>
+<li><code class="docutils literal notranslate"><span class="pre">mapping_&lt;key&gt;</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code>: Dictionaries for mapping
+section names (which by default are the different values for the key
+to group on) to different strings. The order of the names sets the
+order in the output.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="pdf_util.html">pdf_util module</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="publi.html">publi module</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Universität Osnabrück.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
+    </div>
+  </body>
+</html>

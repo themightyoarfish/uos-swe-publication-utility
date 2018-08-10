@@ -1,0 +1,122 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>backends.customhtml &#8212; publipy 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>publipy 1 documentation</span></a></h1>
+        <h2 class="heading"><span>backends.customhtml</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for backends.customhtml</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pybtex</span>
+<span class="kn">from</span> <span class="nn">pybtex.backends.html</span> <span class="k">import</span> <span class="n">Backend</span> <span class="k">as</span> <span class="n">HTMLBackend</span>
+<span class="kn">from</span> <span class="nn">plugin_data</span> <span class="k">import</span> <span class="n">plugin_data</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">PROLOGUE</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&gt;</span>
+<span class="s1">&lt;html&gt;</span>
+<span class="s1">&lt;head&gt;&lt;meta name=&quot;generator&quot; content=&quot;Pybtex&quot;&gt;</span>
+<span class="s1">&lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=</span><span class="si">{encoding}</span><span class="s1">&quot;&gt;</span>
+<span class="s1">&lt;title&gt;Bibliography&lt;/title&gt;</span>
+<span class="s1">&lt;style&gt;</span>
+<span class="si">{stylesheet}</span><span class="s1"></span>
+<span class="s1">&lt;/style&gt;</span>
+<span class="s1">&lt;/head&gt;</span>
+<span class="s1">&lt;body&gt;</span>
+<span class="s1">&lt;dl&gt;</span>
+<span class="s1">&#39;&#39;&#39;</span>
+
+<span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;../publications.css&#39;</span><span class="p">)</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">css_file</span><span class="p">:</span>
+    <span class="n">STYLESHEET</span> <span class="o">=</span> <span class="n">css_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="Backend"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend">[docs]</a><span class="k">class</span> <span class="nc">Backend</span><span class="p">(</span><span class="n">HTMLBackend</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Backend.write_entry"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend.write_entry">[docs]</a>    <span class="k">def</span> <span class="nf">write_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="c1"># TODO: If CSS fails, do HTML stuff here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s1">&#39;&lt;dt&gt;</span><span class="si">%s</span><span class="s1">&lt;/dt&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s1">&#39;&lt;dd&gt;</span><span class="si">%s</span><span class="s1">&lt;/dd&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Backend.write_section"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend.write_section">[docs]</a>    <span class="k">def</span> <span class="nf">write_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s1">&#39;&lt;h2 class=&quot;publipy-section&quot;&gt;</span><span class="si">%s</span><span class="s1">&lt;/h2&gt;&#39;</span> <span class="o">%</span> <span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Backend.write_epilogue"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend.write_epilogue">[docs]</a>    <span class="k">def</span> <span class="nf">write_epilogue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;write_html_wrapper&#39;</span><span class="p">]:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_epilogue</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Backend.write_prologue"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend.write_prologue">[docs]</a>    <span class="k">def</span> <span class="nf">write_prologue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">plugin_data</span><span class="p">[</span><span class="s1">&#39;write_html_wrapper&#39;</span><span class="p">]:</span>
+            <span class="n">encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">or</span> <span class="n">pybtex</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">get_default_encoding</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">PROLOGUE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                                        <span class="n">stylesheet</span><span class="o">=</span><span class="n">STYLESHEET</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Backend.write_to_stream"><a class="viewcode-back" href="../../backends.html#backends.customhtml.Backend.write_to_stream">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formatted_bibliography</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Will be called by write to file. We override to deal with the case</span>
+<span class="sd">        where the FormattedBibliography has groups.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">write</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formatted_bibliography</span> <span class="o">=</span> <span class="n">formatted_bibliography</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_prologue</span><span class="p">()</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">formatted_bibliography</span><span class="p">)</span>
+        <span class="n">last_group</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">group_name</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">group_name</span> <span class="o">!=</span> <span class="n">last_group</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">write_section</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+                    <span class="n">last_group</span> <span class="o">=</span> <span class="n">group_name</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_entry</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+                                     <span class="n">entry</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write_entry</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+                                     <span class="n">entry</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_epilogue</span><span class="p">()</span></div></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Universität Osnabrück.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
+    </div>
+  </body>
+</html>
